@@ -91,7 +91,9 @@ function Bounty() {
             >
               <div className="bounty-card-header">
                 <h3 className="bounty-card-title">{bounty.title}</h3>
-                <span className="bounty-reward">{bounty.reward}</span>
+                <span className="bounty-reward" aria-label={`Reward: ${bounty.reward}`}>
+                  <span aria-hidden="true">🪙</span> {bounty.reward}
+                </span>
               </div>
               <p className="bounty-card-description">
                 {bounty.description.length > 100 
@@ -99,21 +101,6 @@ function Bounty() {
                   : bounty.description
                 }
               </p>
-              <div className="bounty-card-footer">
-                <span
-                  className="bounty-difficulty"
-                  style={{ backgroundColor: getDifficultyColor(bounty.difficulty) }}
-                >
-                  {bounty.difficulty}
-                </span>
-                <div className="bounty-tags">
-                  {bounty.tags.map((tag, index) => (
-                    <span key={index} className="bounty-tag">
-                      {tag}
-                    </span>
-                  ))}
-                </div>
-              </div>
             </div>
           ))}
         </div>

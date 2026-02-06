@@ -67,14 +67,14 @@
 }
 
 .bounty-reward {
-  background-color: #f4ff3a;
-  color: #0a0a0a;
+  background-color: #000000;
+  color: #ffffff;
   padding: 4px 12px;
   border-radius: 12px;
   font-weight: 700;
   font-size: 0.9rem;
   margin-left: 1rem;
-  box-shadow: 0 0 10px rgba(244, 255, 58, 0.5);
+  border: 1px solid #353535;
 }
 
 .bounty-card-description {
