@@ -68,7 +68,7 @@ function Bounty() {
       case 'Medium':
         return '#ff9800';
       case 'Hard':
-        return '#ff1b8d';
+        return '#f4ff3a';
       default:
         return '#999';
     }
@@ -76,11 +76,6 @@ function Bounty() {
 
   return (
     <div className="bounty-container">
-      <div className="bounty-header">
-        <h1>Bounty Board</h1>
-        <p className="bounty-subtitle">Available Challenges</p>
-      </div>
-
       <div className="bounty-content">
         <div className="bounty-grid">
           {bounties.map((bounty) => (
@@ -89,6 +84,17 @@ function Bounty() {
               className="bounty-card"
               onClick={() => handleCardClick(bounty)}
             >
+              <div className="bounty-card-badges">
+                <span
+                  className="bounty-difficulty-badge"
+                  style={{ backgroundColor: getDifficultyColor(bounty.difficulty) }}
+                >
+                  {bounty.difficulty}
+                </span>
+                <span className="bounty-category-badge">
+                  Proxy Commissions
+                </span>
+              </div>
               <div className="bounty-card-header">
                 <h3 className="bounty-card-title">{bounty.title}</h3>
                 <span className="bounty-reward" aria-label={`Reward: ${bounty.reward}`}>
@@ -96,11 +102,17 @@ function Bounty() {
                 </span>
               </div>
               <p className="bounty-card-description">
-                {bounty.description.length > 100 
-                  ? bounty.description.substring(0, 100) + '...'
-                  : bounty.description
-                }
+                {bounty.description}
               </p>
+              {bounty.tags && bounty.tags.length > 0 && (
+                <div className="bounty-card-tags">
+                  {bounty.tags.map((tag, index) => (
+                    <span key={index} className="bounty-tag">
+                      {tag}
+                    </span>
+                  ))}
+                </div>
+              )}
             </div>
           ))}
         </div>

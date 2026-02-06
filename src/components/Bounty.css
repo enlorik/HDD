@@ -5,31 +5,16 @@
   padding: 2rem;
 }
 
-.bounty-header {
-  text-align: center;
-  margin-bottom: 3rem;
-}
-
-.bounty-header h1 {
-  font-size: 2.5rem;
-  margin-bottom: 0.5rem;
-  color: #f4ff3a;
-  text-shadow: 0 0 20px rgba(244, 255, 58, 0.5);
-}
-
-.bounty-subtitle {
-  color: #808080;
-  font-size: 1rem;
-}
-
 .bounty-content {
   max-width: 1400px;
   margin: 0 auto;
 }
 
 .bounty-grid {
-  column-count: 3;
-  column-gap: 1.5rem;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 1.5rem;
+  grid-auto-rows: auto;
 }
 
 .bounty-card {
@@ -40,10 +25,9 @@
   transition: all 0.3s ease;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
   border: 1px solid #353535;
-  break-inside: avoid;
-  margin-bottom: 1.5rem;
-  display: inline-block;
-  width: 100%;
+  display: flex;
+  flex-direction: column;
+  min-height: 320px;
 }
 
 .bounty-card:hover {
@@ -52,58 +36,74 @@
   border-color: #f4ff3a;
 }
 
+.bounty-card-badges {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+  gap: 0.5rem;
+}
+
+.bounty-difficulty-badge {
+  color: #ffffff;
+  padding: 6px 12px;
+  border-radius: 4px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.bounty-category-badge {
+  background-color: #4a9eff;
+  color: #ffffff;
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
 .bounty-card-header {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
   margin-bottom: 1rem;
+  gap: 1rem;
 }
 
 .bounty-card-title {
-  font-size: 1.2rem;
+  font-size: 1.25rem;
   margin: 0;
   color: #ffffff;
   flex: 1;
+  font-weight: 700;
+  line-height: 1.3;
 }
 
 .bounty-reward {
   background-color: #000000;
   color: #ffffff;
-  padding: 4px 12px;
+  padding: 6px 14px;
   border-radius: 12px;
   font-weight: 700;
   font-size: 0.9rem;
-  margin-left: 1rem;
   border: 1px solid #353535;
+  white-space: nowrap;
 }
 
 .bounty-card-description {
   color: #999999;
-  line-height: 1.6;
+  line-height: 1.7;
   margin-bottom: 1rem;
   font-size: 0.95rem;
+  flex: 1;
 }
 
-.bounty-card-footer {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 1rem;
-}
-
-.bounty-difficulty {
-  color: white;
-  padding: 4px 10px;
-  border-radius: 8px;
-  font-size: 0.85rem;
-  font-weight: 700;
-  box-shadow: 0 0 8px currentColor;
-}
-
-.bounty-tags {
+.bounty-card-tags {
   display: flex;
   gap: 0.5rem;
   flex-wrap: wrap;
+  margin-top: auto;
 }
 
 .bounty-tag {
@@ -203,6 +203,14 @@
   align-items: center;
 }
 
+.bounty-difficulty {
+  color: white;
+  padding: 6px 12px;
+  border-radius: 4px;
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+
 .bounty-status {
   color: #808080;
   font-weight: 500;
@@ -231,12 +239,12 @@
     padding: 1rem;
   }
 
-  .bounty-header h1 {
-    font-size: 1.8rem;
+  .bounty-grid {
+    grid-template-columns: 1fr;
   }
 
-  .bounty-grid {
-    column-count: 1;
+  .bounty-card {
+    min-height: auto;
   }
 
   .bounty-modal {
@@ -251,6 +259,6 @@
 
 @media (min-width: 769px) and (max-width: 1200px) {
   .bounty-grid {
-    column-count: 2;
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
   }
 }

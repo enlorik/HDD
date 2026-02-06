@@ -3,36 +3,37 @@ import './Timeline.css';
 
 function Timeline() {
   const [currentDate] = useState(new Date());
+  const [activeTab, setActiveTab] = useState('events-calendar');
   
-  // Hardcoded event data
+  // Hardcoded event data with new gradient colors
   const events = [
     {
       id: 1,
       title: 'Project Alpha',
       startWeek: -1,
       duration: 3,
-      color: '#4a90e2'
+      gradient: 'linear-gradient(90deg, #ff6b3d 0%, #ffb03d 100%)'
     },
     {
       id: 2,
       title: 'Beta Release',
       startWeek: 1,
       duration: 2,
-      color: '#e24a90'
+      gradient: 'linear-gradient(90deg, #ffb03d 0%, #f4ff3a 100%)'
     },
     {
       id: 3,
       title: 'Gamma Testing',
       startWeek: 2,
       duration: 4,
-      color: '#90e24a'
+      gradient: 'linear-gradient(90deg, #ff4d3d 0%, #ff6b3d 100%)'
     },
     {
       id: 4,
       title: 'Delta Deployment',
       startWeek: 4,
       duration: 2,
-      color: '#e2904a'
+      gradient: 'linear-gradient(90deg, #ff6b3d 0%, #ffb03d 100%)'
     }
   ];
 
@@ -50,15 +51,36 @@ function Timeline() {
   const weeks = Array.from({ length: weeksToShow }, (_, i) => startWeek + i);
 
   const getWeekLabel = (weekOffset) => {
-    const weekNum = currentWeek + weekOffset;
-    return `W${weekNum}`;
+    const date = new Date(currentDate);
+    date.setDate(date.getDate() + weekOffset * 7);
+    const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const month = monthNames[date.getMonth()];
+    const day = date.getDate();
+    return `${month} ${day}`;
   };
 
   return (
     <div className="timeline-container">
-      <div className="timeline-header">
-        <h1>Timeline Dashboard</h1>
-        <p className="timeline-subtitle">Project Timeline View</p>
+      {/* Tab Navigation */}
+      <div className="timeline-tabs">
+        <button 
+          className={`timeline-tab ${activeTab === 'events-calendar' ? 'active' : ''}`}
+          onClick={() => setActiveTab('events-calendar')}
+        >
+          Events Calendar
+        </button>
+        <button 
+          className={`timeline-tab ${activeTab === 'schedule' ? 'active' : ''}`}
+          onClick={() => setActiveTab('schedule')}
+        >
+          Schedule
+        </button>
+        <button 
+          className={`timeline-tab ${activeTab === 'timeline' ? 'active' : ''}`}
+          onClick={() => setActiveTab('timeline')}
+        >
+          Timeline
+        </button>
       </div>
 
       <div className="timeline-content">
@@ -67,7 +89,8 @@ function Timeline() {
           <div className="week-headers">
             {weeks.map((week, index) => (
               <div key={week} className="week-header">
-                {getWeekLabel(index - 3)}
+                <div className="week-label">Week {week}</div>
+                <div className="week-date">{getWeekLabel(index - 3)}</div>
               </div>
             ))}
           </div>
@@ -90,11 +113,12 @@ function Timeline() {
                   style={{
                     left: `${leftPercent}%`,
                     width: `${widthPercent}%`,
-                    backgroundColor: event.color,
-                    top: `${index * 60 + 10}px`
+                    background: event.gradient,
+                    top: `${index * 70 + 10}px`
                   }}
                 >
                   <span className="event-title">{event.title}</span>
+                  <span className="event-arrow">›</span>
                 </div>
               );
             })}
