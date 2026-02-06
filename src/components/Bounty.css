@@ -1,7 +1,7 @@
 .bounty-container {
   min-height: 100vh;
-  background-color: #1a1a2e;
-  color: #eaeaea;
+  background-color: #0a0a0a;
+  color: #e0e0e0;
   padding: 2rem;
 }
 
@@ -13,11 +13,12 @@
 .bounty-header h1 {
   font-size: 2.5rem;
   margin-bottom: 0.5rem;
-  color: #ffffff;
+  color: #f4ff3a;
+  text-shadow: 0 0 20px rgba(244, 255, 58, 0.5);
 }
 
 .bounty-subtitle {
-  color: #9a9a9a;
+  color: #808080;
   font-size: 1rem;
 }
 
@@ -27,23 +28,28 @@
 }
 
 .bounty-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-  gap: 1.5rem;
+  column-count: 3;
+  column-gap: 1.5rem;
 }
 
 .bounty-card {
-  background-color: #16213e;
+  background-color: #2a2a2a;
   border-radius: 12px;
   padding: 1.5rem;
   cursor: pointer;
-  transition: transform 0.2s, box-shadow 0.2s;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+  border: 1px solid #353535;
+  break-inside: avoid;
+  margin-bottom: 1.5rem;
+  display: inline-block;
+  width: 100%;
 }
 
 .bounty-card:hover {
   transform: translateY(-4px);
-  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.5);
+  box-shadow: 0 8px 20px rgba(244, 255, 58, 0.3), 0 0 30px rgba(244, 255, 58, 0.1);
+  border-color: #f4ff3a;
 }
 
 .bounty-card-header {
@@ -61,17 +67,18 @@
 }
 
 .bounty-reward {
-  background-color: #4caf50;
-  color: white;
+  background-color: #f4ff3a;
+  color: #0a0a0a;
   padding: 4px 12px;
   border-radius: 12px;
-  font-weight: 600;
+  font-weight: 700;
   font-size: 0.9rem;
   margin-left: 1rem;
+  box-shadow: 0 0 10px rgba(244, 255, 58, 0.5);
 }
 
 .bounty-card-description {
-  color: #b0b0b0;
+  color: #999999;
   line-height: 1.6;
   margin-bottom: 1rem;
   font-size: 0.95rem;
@@ -89,7 +96,8 @@
   padding: 4px 10px;
   border-radius: 8px;
   font-size: 0.85rem;
-  font-weight: 600;
+  font-weight: 700;
+  box-shadow: 0 0 8px currentColor;
 }
 
 .bounty-tags {
@@ -99,11 +107,12 @@
 }
 
 .bounty-tag {
-  background-color: #2a2a4e;
-  color: #a0a0c0;
+  background-color: #353535;
+  color: #4a9eff;
   padding: 4px 10px;
   border-radius: 8px;
   font-size: 0.8rem;
+  border: 1px solid #4a9eff;
 }
 
 /* Modal Styles */
@@ -113,7 +122,7 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background-color: rgba(0, 0, 0, 0.7);
+  background-color: rgba(0, 0, 0, 0.85);
   display: flex;
   justify-content: center;
   align-items: center;
@@ -122,7 +131,7 @@
 }
 
 .bounty-modal {
-  background-color: #16213e;
+  background-color: #2a2a2a;
   border-radius: 16px;
   padding: 2rem;
   max-width: 700px;
@@ -130,7 +139,8 @@
   max-height: 80vh;
   overflow-y: auto;
   position: relative;
-  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.8), 0 0 60px rgba(244, 255, 58, 0.2);
+  border: 1px solid #353535;
 }
 
 .bounty-modal-close {
@@ -139,7 +149,7 @@
   right: 1rem;
   background: none;
   border: none;
-  color: #eaeaea;
+  color: #e0e0e0;
   font-size: 2rem;
   cursor: pointer;
   width: 40px;
@@ -148,11 +158,12 @@
   align-items: center;
   justify-content: center;
   border-radius: 50%;
-  transition: background-color 0.2s;
+  transition: all 0.2s;
 }
 
 .bounty-modal-close:hover {
-  background-color: rgba(255, 255, 255, 0.1);
+  background-color: rgba(244, 255, 58, 0.2);
+  color: #f4ff3a;
 }
 
 .bounty-modal-header {
@@ -171,17 +182,18 @@
 }
 
 .bounty-modal-reward {
-  background-color: #4caf50;
-  color: white;
+  background-color: #f4ff3a;
+  color: #0a0a0a;
   padding: 8px 16px;
   border-radius: 12px;
-  font-weight: 600;
+  font-weight: 700;
   font-size: 1.1rem;
   margin-left: 1rem;
+  box-shadow: 0 0 15px rgba(244, 255, 58, 0.5);
 }
 
 .bounty-modal-body {
-  color: #b0b0b0;
+  color: #999999;
 }
 
 .bounty-modal-meta {
@@ -192,7 +204,7 @@
 }
 
 .bounty-status {
-  color: #a0a0c0;
+  color: #808080;
   font-weight: 500;
 }
 
@@ -224,7 +236,7 @@
   }
 
   .bounty-grid {
-    grid-template-columns: 1fr;
+    column-count: 1;
   }
 
   .bounty-modal {
@@ -234,5 +246,11 @@
 
   .bounty-modal-header h2 {
     font-size: 1.4rem;
+  }
+}
+
+@media (min-width: 769px) and (max-width: 1200px) {
+  .bounty-grid {
+    column-count: 2;
   }
 }
