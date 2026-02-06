@@ -31,7 +31,7 @@
 
 .app-nav-links {
   display: flex;
-  gap: 2rem;
+  gap: 0.5rem;
 }
 
 .nav-link {
@@ -42,6 +42,19 @@
   padding: 0.5rem 1rem;
   border-radius: 8px;
   transition: all 0.2s;
+  position: relative;
+}
+
+/* Slanted inner edge for first button (right side) */
+.nav-link:first-of-type {
+  clip-path: polygon(0 0, calc(100% - 10px) 0, 100% 100%, 0 100%);
+  padding-right: 1.3rem;
+}
+
+/* Slanted inner edge for last button (left side) */
+.nav-link:last-of-type {
+  clip-path: polygon(10px 0, 100% 0, 100% 100%, 0 100%);
+  padding-left: 1.3rem;
 }
 
 .nav-link:hover {
