@@ -13,6 +13,7 @@ function Bounty() {
       reward: '$500',
       status: 'UNSOLVED',
       difficulty: 'Medium',
+      category: 'Security Bounties',
       tags: ['Backend', 'Security']
     },
     {
@@ -22,6 +23,7 @@ function Bounty() {
       reward: '$1000',
       status: 'UNSOLVED',
       difficulty: 'Hard',
+      category: 'Performance Optimization',
       tags: ['Backend', 'Performance']
     },
     {
@@ -31,6 +33,7 @@ function Bounty() {
       reward: '$300',
       status: 'UNSOLVED',
       difficulty: 'Easy',
+      category: 'UI/UX Design',
       tags: ['Frontend', 'CSS']
     },
     {
@@ -40,6 +43,7 @@ function Bounty() {
       reward: '$400',
       status: 'UNSOLVED',
       difficulty: 'Medium',
+      category: 'Feature Development',
       tags: ['Frontend', 'UI/UX']
     },
     {
@@ -49,6 +53,7 @@ function Bounty() {
       reward: '$800',
       status: 'UNSOLVED',
       difficulty: 'Hard',
+      category: 'Database Management',
       tags: ['Backend', 'Database']
     }
   ];
@@ -92,7 +97,7 @@ function Bounty() {
                   {bounty.difficulty}
                 </span>
                 <span className="bounty-category-badge">
-                  Proxy Commissions
+                  {bounty.category || 'General'}
                 </span>
               </div>
               <div className="bounty-card-header">
