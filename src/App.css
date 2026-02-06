@@ -1,15 +1,15 @@
 .app {
   min-height: 100vh;
-  background-color: #1a1a2e;
+  background-color: #0a0a0a;
 }
 
 .app-nav {
-  background-color: #0f0f1e;
-  border-bottom: 2px solid #2a2a4e;
+  background-color: #0a0a0a;
+  border-bottom: 2px solid #2a2a2a;
   position: sticky;
   top: 0;
   z-index: 100;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
 }
 
 .app-nav-content {
@@ -24,8 +24,9 @@
 .app-logo {
   font-size: 1.8rem;
   font-weight: 700;
-  color: #ffffff;
+  color: #f4ff3a;
   letter-spacing: 2px;
+  text-shadow: 0 0 10px rgba(244, 255, 58, 0.5);
 }
 
 .app-nav-links {
@@ -34,7 +35,7 @@
 }
 
 .nav-link {
-  color: #a0a0c0;
+  color: #999999;
   text-decoration: none;
   font-size: 1rem;
   font-weight: 500;
@@ -44,13 +45,14 @@
 }
 
 .nav-link:hover {
-  color: #ffffff;
-  background-color: rgba(255, 255, 255, 0.05);
+  color: #f4ff3a;
+  background-color: rgba(244, 255, 58, 0.1);
 }
 
 .nav-link.active {
-  color: #ffffff;
-  background-color: #4a90e2;
+  color: #0a0a0a;
+  background-color: #f4ff3a;
+  box-shadow: 0 0 15px rgba(244, 255, 58, 0.6);
 }
 
 @media (max-width: 768px) {

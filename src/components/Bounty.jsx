@@ -64,11 +64,11 @@ function Bounty() {
   const getDifficultyColor = (difficulty) => {
     switch (difficulty) {
       case 'Easy':
-        return '#4caf50';
+        return '#4a9eff';
       case 'Medium':
         return '#ff9800';
       case 'Hard':
-        return '#f44336';
+        return '#ff1b8d';
       default:
         return '#999';
     }
