@@ -1,0 +1,129 @@
+.timeline-container {
+  min-height: 100vh;
+  background-color: #1a1a2e;
+  color: #eaeaea;
+  padding: 2rem;
+}
+
+.timeline-header {
+  text-align: center;
+  margin-bottom: 3rem;
+}
+
+.timeline-header h1 {
+  font-size: 2.5rem;
+  margin-bottom: 0.5rem;
+  color: #ffffff;
+}
+
+.timeline-subtitle {
+  color: #9a9a9a;
+  font-size: 1rem;
+}
+
+.timeline-content {
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.timeline-grid {
+  position: relative;
+  background-color: #16213e;
+  border-radius: 12px;
+  padding: 2rem;
+  min-height: 400px;
+}
+
+.week-headers {
+  display: flex;
+  justify-content: space-around;
+  margin-bottom: 2rem;
+  padding-bottom: 1rem;
+  border-bottom: 2px solid #2a2a4e;
+}
+
+.week-header {
+  flex: 1;
+  text-align: center;
+  font-weight: 600;
+  color: #a0a0c0;
+  font-size: 0.9rem;
+}
+
+.today-line {
+  position: absolute;
+  top: 60px;
+  bottom: 0;
+  width: 2px;
+  background-color: #ff6b6b;
+  z-index: 10;
+}
+
+.today-label {
+  position: absolute;
+  top: -30px;
+  left: 50%;
+  transform: translateX(-50%);
+  background-color: #ff6b6b;
+  color: white;
+  padding: 4px 12px;
+  border-radius: 12px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.events-container {
+  position: relative;
+  height: 300px;
+  margin-top: 1rem;
+}
+
+.event-bar {
+  position: absolute;
+  height: 45px;
+  border-radius: 22px;
+  display: flex;
+  align-items: center;
+  padding: 0 1.5rem;
+  cursor: pointer;
+  transition: transform 0.2s, box-shadow 0.2s;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+.event-bar:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+}
+
+.event-title {
+  color: white;
+  font-weight: 500;
+  font-size: 0.95rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+@media (max-width: 768px) {
+  .timeline-container {
+    padding: 1rem;
+  }
+
+  .timeline-header h1 {
+    font-size: 1.8rem;
+  }
+
+  .timeline-grid {
+    padding: 1rem;
+  }
+
+  .event-bar {
+    height: 35px;
+    padding: 0 1rem;
+  }
+
+  .event-title {
+    font-size: 0.85rem;
+  }
+}

@@ -1,0 +1,238 @@
+.bounty-container {
+  min-height: 100vh;
+  background-color: #1a1a2e;
+  color: #eaeaea;
+  padding: 2rem;
+}
+
+.bounty-header {
+  text-align: center;
+  margin-bottom: 3rem;
+}
+
+.bounty-header h1 {
+  font-size: 2.5rem;
+  margin-bottom: 0.5rem;
+  color: #ffffff;
+}
+
+.bounty-subtitle {
+  color: #9a9a9a;
+  font-size: 1rem;
+}
+
+.bounty-content {
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.bounty-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 1.5rem;
+}
+
+.bounty-card {
+  background-color: #16213e;
+  border-radius: 12px;
+  padding: 1.5rem;
+  cursor: pointer;
+  transition: transform 0.2s, box-shadow 0.2s;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+.bounty-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.5);
+}
+
+.bounty-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 1rem;
+}
+
+.bounty-card-title {
+  font-size: 1.2rem;
+  margin: 0;
+  color: #ffffff;
+  flex: 1;
+}
+
+.bounty-reward {
+  background-color: #4caf50;
+  color: white;
+  padding: 4px 12px;
+  border-radius: 12px;
+  font-weight: 600;
+  font-size: 0.9rem;
+  margin-left: 1rem;
+}
+
+.bounty-card-description {
+  color: #b0b0b0;
+  line-height: 1.6;
+  margin-bottom: 1rem;
+  font-size: 0.95rem;
+}
+
+.bounty-card-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+}
+
+.bounty-difficulty {
+  color: white;
+  padding: 4px 10px;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.bounty-tags {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.bounty-tag {
+  background-color: #2a2a4e;
+  color: #a0a0c0;
+  padding: 4px 10px;
+  border-radius: 8px;
+  font-size: 0.8rem;
+}
+
+/* Modal Styles */
+.bounty-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.7);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+  padding: 2rem;
+}
+
+.bounty-modal {
+  background-color: #16213e;
+  border-radius: 16px;
+  padding: 2rem;
+  max-width: 700px;
+  width: 100%;
+  max-height: 80vh;
+  overflow-y: auto;
+  position: relative;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+}
+
+.bounty-modal-close {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  background: none;
+  border: none;
+  color: #eaeaea;
+  font-size: 2rem;
+  cursor: pointer;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  transition: background-color 0.2s;
+}
+
+.bounty-modal-close:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+.bounty-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 1.5rem;
+  padding-right: 2rem;
+}
+
+.bounty-modal-header h2 {
+  font-size: 1.8rem;
+  margin: 0;
+  color: #ffffff;
+  flex: 1;
+}
+
+.bounty-modal-reward {
+  background-color: #4caf50;
+  color: white;
+  padding: 8px 16px;
+  border-radius: 12px;
+  font-weight: 600;
+  font-size: 1.1rem;
+  margin-left: 1rem;
+}
+
+.bounty-modal-body {
+  color: #b0b0b0;
+}
+
+.bounty-modal-meta {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 1rem;
+  align-items: center;
+}
+
+.bounty-status {
+  color: #a0a0c0;
+  font-weight: 500;
+}
+
+.bounty-modal-tags {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  margin-bottom: 1.5rem;
+}
+
+.bounty-modal-description h3 {
+  color: #ffffff;
+  margin-bottom: 0.75rem;
+  font-size: 1.2rem;
+}
+
+.bounty-modal-description p {
+  line-height: 1.8;
+  font-size: 1rem;
+}
+
+@media (max-width: 768px) {
+  .bounty-container {
+    padding: 1rem;
+  }
+
+  .bounty-header h1 {
+    font-size: 1.8rem;
+  }
+
+  .bounty-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .bounty-modal {
+    padding: 1.5rem;
+    margin: 1rem;
+  }
+
+  .bounty-modal-header h2 {
+    font-size: 1.4rem;
+  }
+}
