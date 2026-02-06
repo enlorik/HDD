@@ -94,7 +94,10 @@ function Bounty() {
                 <span className="bounty-reward">{bounty.reward}</span>
               </div>
               <p className="bounty-card-description">
-                {bounty.description.substring(0, 100)}...
+                {bounty.description.length > 100 
+                  ? bounty.description.substring(0, 100) + '...'
+                  : bounty.description
+                }
               </p>
               <div className="bounty-card-footer">
                 <span
