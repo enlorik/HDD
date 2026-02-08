@@ -91,9 +91,6 @@ function Bounty() {
               style={{ borderColor: getDifficultyColor(bounty.difficulty) }}
             >
               <div className="bounty-card-badges">
-                <span className="bounty-category-badge">
-                  {bounty.category || 'General'}
-                </span>
                 <span className="bounty-reward" aria-label={`Reward: ${bounty.reward}`}>
                   <span aria-hidden="true">🪙</span> {bounty.reward}
                 </span>
