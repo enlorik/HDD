@@ -88,23 +88,18 @@ function Bounty() {
               key={bounty.id}
               className="bounty-card"
               onClick={() => handleCardClick(bounty)}
+              style={{ borderColor: getDifficultyColor(bounty.difficulty) }}
             >
               <div className="bounty-card-badges">
-                <span
-                  className="bounty-difficulty-badge"
-                  style={{ backgroundColor: getDifficultyColor(bounty.difficulty) }}
-                >
-                  {bounty.difficulty}
-                </span>
                 <span className="bounty-category-badge">
                   {bounty.category || 'General'}
+                </span>
+                <span className="bounty-reward" aria-label={`Reward: ${bounty.reward}`}>
+                  <span aria-hidden="true">🪙</span> {bounty.reward}
                 </span>
               </div>
               <div className="bounty-card-header">
                 <h3 className="bounty-card-title">{bounty.title}</h3>
-                <span className="bounty-reward" aria-label={`Reward: ${bounty.reward}`}>
-                  <span aria-hidden="true">🪙</span> {bounty.reward}
-                </span>
               </div>
               <p className="bounty-card-description">
                 {bounty.description}
