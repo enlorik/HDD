@@ -77,10 +77,26 @@
 
 .bounty-reward {
   color: #ffffff;
-  padding: 6px 14px;
   font-weight: 700;
   font-size: 0.9rem;
   white-space: nowrap;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.coin-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  background-color: #ffffff;
+  color: #000000;
+  border-radius: 50%;
+  font-weight: 700;
+  font-size: 0.9rem;
+  flex-shrink: 0;
 }
 
 .bounty-card-description {

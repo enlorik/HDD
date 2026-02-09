@@ -92,7 +92,8 @@ function Bounty() {
             >
               <div className="bounty-card-badges">
                 <span className="bounty-reward" aria-label={`Reward: ${bounty.reward}`}>
-                  <span aria-hidden="true">🪙</span> {bounty.reward}
+                  <span className="coin-icon" aria-hidden="true">$</span>
+                  {bounty.reward}
                 </span>
               </div>
               <div className="bounty-card-header">
