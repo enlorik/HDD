@@ -82,7 +82,7 @@
   white-space: nowrap;
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: 8px;
 }
 
 .coin-icon {
@@ -95,7 +95,7 @@
   color: #000000;
   border-radius: 50%;
   font-weight: 700;
-  font-size: 0.9rem;
+  font-size: 0.75rem;
   flex-shrink: 0;
 }
 
