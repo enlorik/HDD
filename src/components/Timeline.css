@@ -5,6 +5,27 @@
   padding: 2rem;
 }
 
+/* Loading and Error States */
+.timeline-status {
+  max-width: 1400px;
+  margin: 0 auto 1rem;
+  padding: 1rem;
+  background-color: rgba(74, 158, 255, 0.1);
+  border-left: 4px solid #4a9eff;
+  border-radius: 8px;
+  color: #eaeaea;
+}
+
+.timeline-status.error {
+  background-color: rgba(255, 77, 61, 0.1);
+  border-left-color: #ff4d3d;
+}
+
+.timeline-status p {
+  margin: 0;
+  font-size: 0.95rem;
+}
+
 /* Tab Navigation */
 .timeline-tabs {
   display: flex;

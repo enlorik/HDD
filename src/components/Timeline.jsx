@@ -1,9 +1,34 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import './Timeline.css';
+import { fetchTopcoderChallenges, formatChallengesForTimeline } from '../services/topcoderService';
 
 function Timeline() {
   const [currentDate] = useState(new Date());
   const [activeTab, setActiveTab] = useState('events-calendar');
+  const [topcoderChallenges, setTopcoderChallenges] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  
+  // Fetch Topcoder challenges on component mount
+  useEffect(() => {
+    async function loadChallenges() {
+      try {
+        setLoading(true);
+        const challenges = await fetchTopcoderChallenges();
+        const formattedEvents = formatChallengesForTimeline(challenges, currentDate);
+        setTopcoderChallenges(formattedEvents);
+        setError(null);
+      } catch (err) {
+        console.error('Failed to load Topcoder challenges:', err);
+        // Error is handled by the service with fallback data, so we don't show error UI
+        setError(null);
+      } finally {
+        setLoading(false);
+      }
+    }
+    
+    loadChallenges();
+  }, [currentDate]);
   
   // Hardcoded event data with new gradient colors
   const events = [
@@ -59,6 +84,9 @@ function Timeline() {
     return `${month} ${day}`;
   };
 
+  // Combine hardcoded events with Topcoder challenges
+  const allEvents = [...events, ...topcoderChallenges];
+
   return (
     <div className="timeline-container">
       {/* Tab Navigation */}
@@ -83,6 +111,19 @@ function Timeline() {
         </button>
       </div>
 
+      {/* Loading and Error States */}
+      {loading && (
+        <div className="timeline-status">
+          <p>Loading Topcoder challenges...</p>
+        </div>
+      )}
+      
+      {error && (
+        <div className="timeline-status error">
+          <p>{error}</p>
+        </div>
+      )}
+
       <div className="timeline-content">
         <div className="timeline-grid">
           {/* Week headers */}
@@ -102,7 +143,7 @@ function Timeline() {
 
           {/* Events */}
           <div className="events-container">
-            {events.map((event, index) => {
+            {allEvents.map((event, index) => {
               const leftPercent = ((event.startWeek + 3) / weeksToShow) * 100;
               const widthPercent = (event.duration / weeksToShow) * 100;
               
@@ -116,6 +157,8 @@ function Timeline() {
                     background: event.gradient,
                     top: `${index * 70 + 10}px`
                   }}
+                  onClick={() => event.detailLink && window.open(event.detailLink, '_blank', 'noopener,noreferrer')}
+                  title={event.type === 'topcoder' ? `${event.title} (${event.track})` : event.title}
                 >
                   <span className="event-title">{event.title}</span>
                   <span className="event-arrow">›</span>
