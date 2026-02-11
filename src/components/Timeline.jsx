@@ -20,7 +20,8 @@ function Timeline() {
         setError(null);
       } catch (err) {
         console.error('Failed to load Topcoder challenges:', err);
-        setError(null); // Don't show error since we have fallback data
+        // Error is handled by the service with fallback data, so we don't show error UI
+        setError(null);
       } finally {
         setLoading(false);
       }
@@ -156,7 +157,7 @@ function Timeline() {
                     background: event.gradient,
                     top: `${index * 70 + 10}px`
                   }}
-                  onClick={() => event.detailLink && window.open(event.detailLink, '_blank')}
+                  onClick={() => event.detailLink && window.open(event.detailLink, '_blank', 'noopener,noreferrer')}
                   title={event.type === 'topcoder' ? `${event.title} (${event.track})` : event.title}
                 >
                   <span className="event-title">{event.title}</span>
