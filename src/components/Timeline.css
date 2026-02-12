@@ -201,22 +201,22 @@
 }
 
 .legend-submission {
-  background: linear-gradient(90deg, #808080 0%, #a0a0a0 100%);
+  background: linear-gradient(90deg, #808080 0%, #808080 10%, #909090 50%, #a0a0a0 90%, #a0a0a0 100%);
   opacity: 1;
 }
 
 .legend-review {
-  background: linear-gradient(90deg, #808080cc 0%, #a0a0a0cc 100%);
+  background: linear-gradient(90deg, #808080cc 0%, #808080cc 10%, #909090cc 50%, #a0a0a0cc 90%, #a0a0a0cc 100%);
   opacity: 1;
 }
 
 .legend-appeals {
-  background: linear-gradient(90deg, #80808099 0%, #a0a0a099 100%);
+  background: linear-gradient(90deg, #80808099 0%, #80808099 10%, #90909099 50%, #a0a0a099 90%, #a0a0a099 100%);
   opacity: 1;
 }
 
 .legend-completion {
-  background: linear-gradient(90deg, #80808066 0%, #a0a0a066 100%);
+  background: linear-gradient(90deg, #80808066 0%, #80808066 10%, #90909066 50%, #a0a0a066 90%, #a0a0a066 100%);
   opacity: 1;
 }
 
@@ -232,7 +232,7 @@
 .phase-segment {
   height: 100%;
   display: inline-block;
-  border-right: none;
+  border-right: 2px solid rgba(10, 10, 10, 0.5);
   position: relative;
   transition: all 0.3s ease;
 }
@@ -243,6 +243,7 @@
 
 .phase-active {
   box-shadow: inset 0 0 20px rgba(255, 255, 255, 0.3);
+  border-right: 2px solid rgba(255, 255, 255, 0.4);
 }
 
 .event-bar-phased .event-title {

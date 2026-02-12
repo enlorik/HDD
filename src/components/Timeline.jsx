@@ -203,33 +203,33 @@ function Timeline() {
                 >
                   {hasPhases ? (
                     <>
-                      {/* Phase segments with smooth gradient transitions */}
+                      {/* Phase segments with slow gradient transitions within phases */}
                       <div 
                         className={`phase-segment phase-submission ${event.phases.currentPhase === 'submission' ? 'phase-active' : ''}`}
                         style={{
                           width: `${event.phases.submission}%`,
-                          background: `linear-gradient(90deg, ${event.baseColors.start} 0%, ${event.baseColors.mid} 50%, ${event.baseColors.end} 100%)`
+                          background: `linear-gradient(90deg, ${event.baseColors.start} 0%, ${event.baseColors.start} 10%, ${event.baseColors.mid} 50%, ${event.baseColors.end} 90%, ${event.baseColors.end} 100%)`
                         }}
                       />
                       <div 
                         className={`phase-segment phase-review ${event.phases.currentPhase === 'review' ? 'phase-active' : ''}`}
                         style={{
                           width: `${event.phases.review}%`,
-                          background: `linear-gradient(90deg, ${event.baseColors.start}e6 0%, ${event.baseColors.mid}e6 50%, ${event.baseColors.end}e6 100%)`
+                          background: `linear-gradient(90deg, ${event.baseColors.start}e6 0%, ${event.baseColors.start}e6 10%, ${event.baseColors.mid}e6 50%, ${event.baseColors.end}e6 90%, ${event.baseColors.end}e6 100%)`
                         }}
                       />
                       <div 
                         className={`phase-segment phase-appeals ${event.phases.currentPhase === 'appeals' ? 'phase-active' : ''}`}
                         style={{
                           width: `${event.phases.appeals}%`,
-                          background: `linear-gradient(90deg, ${event.baseColors.start}b3 0%, ${event.baseColors.mid}b3 50%, ${event.baseColors.end}b3 100%)`
+                          background: `linear-gradient(90deg, ${event.baseColors.start}b3 0%, ${event.baseColors.start}b3 10%, ${event.baseColors.mid}b3 50%, ${event.baseColors.end}b3 90%, ${event.baseColors.end}b3 100%)`
                         }}
                       />
                       <div 
                         className={`phase-segment phase-completion ${event.phases.currentPhase === 'completed' ? 'phase-active' : ''}`}
                         style={{
                           width: `${event.phases.completion}%`,
-                          background: `linear-gradient(90deg, ${event.baseColors.start}80 0%, ${event.baseColors.mid}80 50%, ${event.baseColors.end}80 100%)`
+                          background: `linear-gradient(90deg, ${event.baseColors.start}80 0%, ${event.baseColors.start}80 10%, ${event.baseColors.mid}80 50%, ${event.baseColors.end}80 90%, ${event.baseColors.end}80 100%)`
                         }}
                       />
                       <span className="event-title">{event.title}</span>
