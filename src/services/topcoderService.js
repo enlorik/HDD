@@ -5,7 +5,7 @@
 import { mockTopcoderChallenges } from './mockTopcoderData';
 
 const TOPCODER_API_URL = 'https://api.topcoder.com/v5/challenges';
-const USE_MOCK_DATA = false; // Set to true to use mock data instead of API
+const USE_MOCK_DATA = true; // Set to true to use mock data instead of API
 
 /**
  * Fetch active Topcoder challenges from the API
@@ -36,19 +36,32 @@ export async function fetchTopcoderChallenges() {
     const data = await response.json();
     
     // Extract and format relevant challenge data
-    const challenges = (data || []).map(challenge => ({
-      id: challenge.id,
-      name: challenge.name || 'Untitled Challenge',
-      registrationEndDate: challenge.registrationEndDate,
-      submissionEndDate: challenge.submissionEndDate,
-      track: challenge.track || 'Unknown',
-      type: challenge.type || 'Challenge',
-      prizeSets: challenge.prizeSets || [],
-      technologies: challenge.technologies || [],
-      tags: challenge.tags || [],
-      overview: challenge.overview,
-      detailLink: `https://www.topcoder.com/challenges/${challenge.id}`
-    }));
+    const challenges = (data || []).map(challenge => {
+      // Calculate phase dates (mock placeholders if not provided by API)
+      const submissionEnd = new Date(challenge.submissionEndDate);
+      const reviewStart = challenge.reviewStartDate ? new Date(challenge.reviewStartDate) : submissionEnd;
+      const appealsStart = challenge.appealsStartDate ? new Date(challenge.appealsStartDate) : 
+        new Date(reviewStart.getTime() + 2 * 24 * 60 * 60 * 1000); // 2 days after review
+      const completion = challenge.completionDate ? new Date(challenge.completionDate) : 
+        new Date(appealsStart.getTime() + 2 * 24 * 60 * 60 * 1000); // 2 days after appeals
+      
+      return {
+        id: challenge.id,
+        name: challenge.name || 'Untitled Challenge',
+        registrationEndDate: challenge.registrationEndDate,
+        submissionEndDate: challenge.submissionEndDate,
+        reviewStartDate: reviewStart.toISOString(),
+        appealsStartDate: appealsStart.toISOString(),
+        completionDate: completion.toISOString(),
+        track: challenge.track || 'Unknown',
+        type: challenge.type || 'Challenge',
+        prizeSets: challenge.prizeSets || [],
+        technologies: challenge.technologies || [],
+        tags: challenge.tags || [],
+        overview: challenge.overview,
+        detailLink: `https://www.topcoder.com/challenges/${challenge.id}`
+      };
+    });
     
     return challenges;
   } catch (error) {
@@ -63,7 +76,7 @@ export async function fetchTopcoderChallenges() {
  * Format Topcoder challenges for timeline display
  * @param {Array} challenges - Array of challenge objects
  * @param {Date} referenceDate - Reference date for calculating week offsets
- * @returns {Array} Array of formatted events for timeline
+ * @returns {Array} Array of formatted events for timeline with phase information
  */
 export function formatChallengesForTimeline(challenges, referenceDate = new Date()) {
   const getWeekOffset = (targetDate, refDate) => {
@@ -83,31 +96,55 @@ export function formatChallengesForTimeline(challenges, referenceDate = new Date
     .map(challenge => {
       const registrationEnd = new Date(challenge.registrationEndDate);
       const submissionEnd = new Date(challenge.submissionEndDate);
+      const reviewStart = new Date(challenge.reviewStartDate || challenge.submissionEndDate);
+      const appealsStart = new Date(challenge.appealsStartDate || reviewStart.getTime() + 2 * 24 * 60 * 60 * 1000);
+      const completion = new Date(challenge.completionDate || appealsStart.getTime() + 2 * 24 * 60 * 60 * 1000);
       
-      // Use registration end date as start, submission end date as end
+      // Use registration end date as start, completion date as end
       const startWeek = getWeekOffset(registrationEnd, referenceDate);
-      const duration = getWeekDuration(registrationEnd, submissionEnd);
+      const duration = getWeekDuration(registrationEnd, completion);
+      
+      // Calculate phase durations as percentages of total duration
+      const totalDuration = completion - registrationEnd;
+      const submissionDuration = submissionEnd - registrationEnd;
+      const reviewDuration = appealsStart - submissionEnd;
+      const appealsDuration = completion - appealsStart;
+      
+      const submissionPercent = (submissionDuration / totalDuration) * 100;
+      const reviewPercent = (reviewDuration / totalDuration) * 100;
+      const appealsPercent = (appealsDuration / totalDuration) * 100;
+      
+      // Determine current phase based on current date
+      const now = new Date();
+      let currentPhase = 'submission';
+      if (now >= completion) {
+        currentPhase = 'completed';
+      } else if (now >= appealsStart) {
+        currentPhase = 'appeals';
+      } else if (now >= submissionEnd) {
+        currentPhase = 'review';
+      }
       
       // Determine gradient based on track
-      let gradient;
+      let baseColors;
       switch (challenge.track) {
         case 'DEVELOP':
         case 'Dev':
-          gradient = 'linear-gradient(90deg, #4a9eff 0%, #6bb5ff 100%)'; // Blue
+          baseColors = { start: '#4a9eff', end: '#6bb5ff' }; // Blue
           break;
         case 'DESIGN':
         case 'Des':
-          gradient = 'linear-gradient(90deg, #ff6b3d 0%, #ff8c5c 100%)'; // Orange
+          baseColors = { start: '#ff6b3d', end: '#ff8c5c' }; // Orange
           break;
         case 'DATA_SCIENCE':
         case 'DS':
-          gradient = 'linear-gradient(90deg, #9c4aff 0%, #b56bff 100%)'; // Purple
+          baseColors = { start: '#9c4aff', end: '#b56bff' }; // Purple
           break;
         case 'QA':
-          gradient = 'linear-gradient(90deg, #4aff8c 0%, #6bffaa 100%)'; // Green
+          baseColors = { start: '#4aff8c', end: '#6bffaa' }; // Green
           break;
         default:
-          gradient = 'linear-gradient(90deg, #808080 0%, #a0a0a0 100%)'; // Gray
+          baseColors = { start: '#808080', end: '#a0a0a0' }; // Gray
       }
 
       return {
@@ -115,11 +152,21 @@ export function formatChallengesForTimeline(challenges, referenceDate = new Date
         title: challenge.name,
         startWeek,
         duration,
-        gradient,
+        gradient: `linear-gradient(90deg, ${baseColors.start} 0%, ${baseColors.end} 100%)`,
+        baseColors,
+        phases: {
+          submission: submissionPercent,
+          review: reviewPercent,
+          appeals: appealsPercent,
+          currentPhase
+        },
         type: 'topcoder',
         detailLink: challenge.detailLink,
         registrationEndDate: challenge.registrationEndDate,
         submissionEndDate: challenge.submissionEndDate,
+        reviewStartDate: challenge.reviewStartDate,
+        appealsStartDate: challenge.appealsStartDate,
+        completionDate: challenge.completionDate,
         track: challenge.track
       };
     });

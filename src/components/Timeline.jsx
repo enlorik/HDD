@@ -111,6 +111,29 @@ function Timeline() {
         </button>
       </div>
 
+      {/* Phase Legend */}
+      <div className="phase-legend">
+        <div className="legend-title">Contest Phases:</div>
+        <div className="legend-items">
+          <div className="legend-item">
+            <div className="legend-color legend-submission"></div>
+            <span>Submission</span>
+          </div>
+          <div className="legend-item">
+            <div className="legend-color legend-review"></div>
+            <span>Review</span>
+          </div>
+          <div className="legend-item">
+            <div className="legend-color legend-appeals"></div>
+            <span>Appeals</span>
+          </div>
+          <div className="legend-item">
+            <div className="legend-color legend-completion"></div>
+            <span>Completion</span>
+          </div>
+        </div>
+      </div>
+
       {/* Loading and Error States */}
       {loading && (
         <div className="timeline-status">
@@ -147,21 +170,77 @@ function Timeline() {
               const leftPercent = ((event.startWeek + 3) / weeksToShow) * 100;
               const widthPercent = (event.duration / weeksToShow) * 100;
               
+              // Check if this is a Topcoder event with phase data
+              const hasPhases = event.type === 'topcoder' && event.phases;
+              
+              // Build tooltip text
+              let tooltipText = event.title;
+              if (event.type === 'topcoder') {
+                tooltipText += ` (${event.track})`;
+                if (hasPhases) {
+                  const phaseLabels = {
+                    submission: 'Submission Phase',
+                    review: 'Review Phase',
+                    appeals: 'Appeals Phase',
+                    completed: 'Completed'
+                  };
+                  tooltipText += `\nCurrent: ${phaseLabels[event.phases.currentPhase]}`;
+                }
+              }
+              
               return (
                 <div
                   key={event.id}
-                  className="event-bar"
+                  className={`event-bar ${hasPhases ? 'event-bar-phased' : ''}`}
                   style={{
                     left: `${leftPercent}%`,
                     width: `${widthPercent}%`,
-                    background: event.gradient,
+                    background: hasPhases ? 'transparent' : event.gradient,
                     top: `${index * 70 + 10}px`
                   }}
                   onClick={() => event.detailLink && window.open(event.detailLink, '_blank', 'noopener,noreferrer')}
-                  title={event.type === 'topcoder' ? `${event.title} (${event.track})` : event.title}
+                  title={tooltipText}
                 >
-                  <span className="event-title">{event.title}</span>
-                  <span className="event-arrow">›</span>
+                  {hasPhases ? (
+                    <>
+                      {/* Phase segments with borders */}
+                      <div 
+                        className={`phase-segment phase-submission ${event.phases.currentPhase === 'submission' ? 'phase-active' : ''}`}
+                        style={{
+                          width: `${event.phases.submission}%`,
+                          background: `linear-gradient(90deg, ${event.baseColors.start} 0%, ${event.baseColors.end} 100%)`
+                        }}
+                      />
+                      <div 
+                        className={`phase-segment phase-review ${event.phases.currentPhase === 'review' ? 'phase-active' : ''}`}
+                        style={{
+                          width: `${event.phases.review}%`,
+                          background: `linear-gradient(90deg, ${event.baseColors.start}cc 0%, ${event.baseColors.end}cc 100%)`
+                        }}
+                      />
+                      <div 
+                        className={`phase-segment phase-appeals ${event.phases.currentPhase === 'appeals' ? 'phase-active' : ''}`}
+                        style={{
+                          width: `${event.phases.appeals}%`,
+                          background: `linear-gradient(90deg, ${event.baseColors.start}99 0%, ${event.baseColors.end}99 100%)`
+                        }}
+                      />
+                      <div 
+                        className={`phase-segment phase-completion ${event.phases.currentPhase === 'completed' ? 'phase-active' : ''}`}
+                        style={{
+                          width: `${100 - event.phases.submission - event.phases.review - event.phases.appeals}%`,
+                          background: `linear-gradient(90deg, ${event.baseColors.start}66 0%, ${event.baseColors.end}66 100%)`
+                        }}
+                      />
+                      <span className="event-title">{event.title}</span>
+                      <span className="event-arrow">›</span>
+                    </>
+                  ) : (
+                    <>
+                      <span className="event-title">{event.title}</span>
+                      <span className="event-arrow">›</span>
+                    </>
+                  )}
                 </div>
               );
             })}
