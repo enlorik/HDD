@@ -100,8 +100,12 @@ export function formatChallengesForTimeline(challenges, referenceDate = new Date
       const reviewStart = challenge.reviewStartDate 
         ? new Date(challenge.reviewStartDate)
         : new Date(submissionEnd.getTime() + 24 * 60 * 60 * 1000);
-      const appealsStart = new Date(challenge.appealsStartDate || reviewStart.getTime() + 2 * 24 * 60 * 60 * 1000);
-      const completion = new Date(challenge.completionDate || appealsStart.getTime() + 2 * 24 * 60 * 60 * 1000);
+      const appealsStart = challenge.appealsStartDate 
+        ? new Date(challenge.appealsStartDate)
+        : new Date(reviewStart.getTime() + 2 * 24 * 60 * 60 * 1000);
+      const completion = challenge.completionDate 
+        ? new Date(challenge.completionDate)
+        : new Date(appealsStart.getTime() + 2 * 24 * 60 * 60 * 1000);
       
       // Use registration end date as start, completion date as end
       const startWeek = getWeekOffset(registrationEnd, referenceDate);

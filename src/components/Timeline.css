@@ -208,22 +208,22 @@
 }
 
 .legend-submission {
-  background: linear-gradient(90deg, #4a9eff 0%, #6bb5ff 100%);
+  background: linear-gradient(90deg, #808080 0%, #a0a0a0 100%);
   opacity: 1;
 }
 
 .legend-review {
-  background: linear-gradient(90deg, #4a9effcc 0%, #6bb5ffcc 100%);
+  background: linear-gradient(90deg, #808080cc 0%, #a0a0a0cc 100%);
   opacity: 1;
 }
 
 .legend-appeals {
-  background: linear-gradient(90deg, #4a9eff99 0%, #6bb5ff99 100%);
+  background: linear-gradient(90deg, #80808099 0%, #a0a0a099 100%);
   opacity: 1;
 }
 
 .legend-completion {
-  background: linear-gradient(90deg, #4a9eff66 0%, #6bb5ff66 100%);
+  background: linear-gradient(90deg, #80808066 0%, #a0a0a066 100%);
   opacity: 1;
 }
 
