@@ -203,43 +203,39 @@ function Timeline() {
                 >
                   {hasPhases ? (
                     <>
-                      {/* Phase segments with borders */}
+                      {/* Phase segments with smooth gradient transitions */}
                       <div 
                         className={`phase-segment phase-submission ${event.phases.currentPhase === 'submission' ? 'phase-active' : ''}`}
                         style={{
                           width: `${event.phases.submission}%`,
-                          background: `linear-gradient(90deg, ${event.baseColors.start} 0%, ${event.baseColors.end} 100%)`
+                          background: `linear-gradient(90deg, ${event.baseColors.start} 0%, ${event.baseColors.mid} 50%, ${event.baseColors.end} 100%)`
                         }}
                       />
                       <div 
                         className={`phase-segment phase-review ${event.phases.currentPhase === 'review' ? 'phase-active' : ''}`}
                         style={{
                           width: `${event.phases.review}%`,
-                          background: `linear-gradient(90deg, ${event.baseColors.start}cc 0%, ${event.baseColors.end}cc 100%)`
+                          background: `linear-gradient(90deg, ${event.baseColors.start}e6 0%, ${event.baseColors.mid}e6 50%, ${event.baseColors.end}e6 100%)`
                         }}
                       />
                       <div 
                         className={`phase-segment phase-appeals ${event.phases.currentPhase === 'appeals' ? 'phase-active' : ''}`}
                         style={{
                           width: `${event.phases.appeals}%`,
-                          background: `linear-gradient(90deg, ${event.baseColors.start}99 0%, ${event.baseColors.end}99 100%)`
+                          background: `linear-gradient(90deg, ${event.baseColors.start}b3 0%, ${event.baseColors.mid}b3 50%, ${event.baseColors.end}b3 100%)`
                         }}
                       />
                       <div 
                         className={`phase-segment phase-completion ${event.phases.currentPhase === 'completed' ? 'phase-active' : ''}`}
                         style={{
                           width: `${event.phases.completion}%`,
-                          background: `linear-gradient(90deg, ${event.baseColors.start}66 0%, ${event.baseColors.end}66 100%)`
+                          background: `linear-gradient(90deg, ${event.baseColors.start}80 0%, ${event.baseColors.mid}80 50%, ${event.baseColors.end}80 100%)`
                         }}
                       />
                       <span className="event-title">{event.title}</span>
-                      <span className="event-arrow">›</span>
                     </>
                   ) : (
-                    <>
-                      <span className="event-title">{event.title}</span>
-                      <span className="event-arrow">›</span>
-                    </>
+                    <span className="event-title">{event.title}</span>
                   )}
                 </div>
               );
