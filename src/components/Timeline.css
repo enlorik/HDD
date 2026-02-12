@@ -220,7 +220,7 @@
   opacity: 1;
 }
 
-/* Phase Segments */
+/* Phase Segments with Slow-Fast Gradient Effect */
 .event-bar-phased {
   display: flex;
   align-items: center;
@@ -235,6 +235,8 @@
   border-right: none;
   position: relative;
   transition: all 0.3s ease;
+  /* Sharp border at the end of each phase to create fast gradient effect */
+  border-right: 2px solid rgba(10, 10, 10, 0.5);
 }
 
 .phase-segment:last-of-type {
@@ -243,6 +245,12 @@
 
 .phase-active {
   box-shadow: inset 0 0 20px rgba(255, 255, 255, 0.3);
+  /* Enhanced border for active phase */
+  border-right: 2px solid rgba(255, 255, 255, 0.4);
+}
+
+.phase-segment:last-of-type.phase-active {
+  border-right: none;
 }
 
 .event-bar-phased .event-title {

@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gradient Calendar Demo - Slow-Fast Effect</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', sans-serif;
+            background: linear-gradient(180deg, #0a0a0a 0%, #1a1a1a 100%);
+            color: #eaeaea;
+            padding: 2rem;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            text-align: center;
+            color: #f4ff3a;
+            margin-bottom: 1rem;
+            font-size: 2.5rem;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #a0a0a0;
+            margin-bottom: 3rem;
+            font-size: 1.1rem;
+        }
+
+        .demo-section {
+            margin-bottom: 3rem;
+        }
+
+        .section-title {
+            color: #f4ff3a;
+            font-size: 1.5rem;
+            margin-bottom: 1rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 2px solid rgba(244, 255, 58, 0.3);
+        }
+
+        .section-description {
+            color: #c0c0c0;
+            margin-bottom: 1.5rem;
+            line-height: 1.6;
+        }
+
+        /* Calendar Event Bar */
+        .calendar-bar {
+            position: relative;
+            height: 60px;
+            border-radius: 30px;
+            margin-bottom: 2rem;
+            display: flex;
+            align-items: center;
+            overflow: hidden;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+        }
+
+        .calendar-bar-title {
+            position: absolute;
+            left: 1.5rem;
+            color: #000000;
+            font-weight: 700;
+            font-size: 1rem;
+            z-index: 10;
+        }
+
+        /* Phase segments with slow-fast gradient effect */
+        .phase-segment {
+            height: 100%;
+            display: inline-block;
+            /* Sharp border creates "fast" transition at category boundaries */
+            border-right: 2px solid rgba(10, 10, 10, 0.5);
+            transition: all 0.3s ease;
+        }
+
+        .phase-segment:last-child {
+            border-right: none;
+        }
+
+        /* Demonstration 1: Traditional smooth gradient (reference) */
+        .traditional-gradient {
+            background: linear-gradient(90deg, #4a9eff 0%, #6bb5ff 100%);
+        }
+
+        /* Demonstration 2: Slow-Fast Gradient with multiple categories */
+        .slow-fast-bar .submission {
+            width: 30%;
+            background: linear-gradient(90deg,
+                #4a9eff 0%,
+                #4a9eff 10%,
+                #5ca9ff 50%,
+                #6bb5ff 90%,
+                #6bb5ff 100%
+            );
+        }
+
+        .slow-fast-bar .review {
+            width: 25%;
+            background: linear-gradient(90deg,
+                #4a9effe6 0%,
+                #4a9effe6 10%,
+                #5ca9ffe6 50%,
+                #6bb5ffe6 90%,
+                #6bb5ffe6 100%
+            );
+        }
+
+        .slow-fast-bar .appeals {
+            width: 25%;
+            background: linear-gradient(90deg,
+                #4a9effb3 0%,
+                #4a9effb3 10%,
+                #5ca9ffb3 50%,
+                #6bb5ffb3 90%,
+                #6bb5ffb3 100%
+            );
+        }
+
+        .slow-fast-bar .completion {
+            width: 20%;
+            background: linear-gradient(90deg,
+                #4a9eff80 0%,
+                #4a9eff80 10%,
+                #5ca9ff80 50%,
+                #6bb5ff80 90%,
+                #6bb5ff80 100%
+            );
+        }
+
+        /* Multiple track examples */
+        .track-dev .phase-segment:nth-child(1) {
+            background: linear-gradient(90deg, #4a9eff 0%, #4a9eff 10%, #5ca9ff 50%, #6bb5ff 90%, #6bb5ff 100%);
+        }
+        .track-dev .phase-segment:nth-child(2) {
+            background: linear-gradient(90deg, #4a9effe6 0%, #4a9effe6 10%, #5ca9ffe6 50%, #6bb5ffe6 90%, #6bb5ffe6 100%);
+        }
+        .track-dev .phase-segment:nth-child(3) {
+            background: linear-gradient(90deg, #4a9effb3 0%, #4a9effb3 10%, #5ca9ffb3 50%, #6bb5ffb3 90%, #6bb5ffb3 100%);
+        }
+        .track-dev .phase-segment:nth-child(4) {
+            background: linear-gradient(90deg, #4a9eff80 0%, #4a9eff80 10%, #5ca9ff80 50%, #6bb5ff80 90%, #6bb5ff80 100%);
+        }
+
+        .track-design .phase-segment:nth-child(1) {
+            background: linear-gradient(90deg, #ff6b3d 0%, #ff6b3d 10%, #ff7a4d 50%, #ff8c5c 90%, #ff8c5c 100%);
+        }
+        .track-design .phase-segment:nth-child(2) {
+            background: linear-gradient(90deg, #ff6b3de6 0%, #ff6b3de6 10%, #ff7a4de6 50%, #ff8c5ce6 90%, #ff8c5ce6 100%);
+        }
+        .track-design .phase-segment:nth-child(3) {
+            background: linear-gradient(90deg, #ff6b3db3 0%, #ff6b3db3 10%, #ff7a4db3 50%, #ff8c5cb3 90%, #ff8c5cb3 100%);
+        }
+        .track-design .phase-segment:nth-child(4) {
+            background: linear-gradient(90deg, #ff6b3d80 0%, #ff6b3d80 10%, #ff7a4d80 50%, #ff8c5c80 90%, #ff8c5c80 100%);
+        }
+
+        .track-ds .phase-segment:nth-child(1) {
+            background: linear-gradient(90deg, #9c4aff 0%, #9c4aff 10%, #a75aff 50%, #b56bff 90%, #b56bff 100%);
+        }
+        .track-ds .phase-segment:nth-child(2) {
+            background: linear-gradient(90deg, #9c4affe6 0%, #9c4affe6 10%, #a75affe6 50%, #b56bffe6 90%, #b56bffe6 100%);
+        }
+        .track-ds .phase-segment:nth-child(3) {
+            background: linear-gradient(90deg, #9c4affb3 0%, #9c4affb3 10%, #a75affb3 50%, #b56bffb3 90%, #b56bffb3 100%);
+        }
+        .track-ds .phase-segment:nth-child(4) {
+            background: linear-gradient(90deg, #9c4aff80 0%, #9c4aff80 10%, #a75aff80 50%, #b56bff80 90%, #b56bff80 100%);
+        }
+
+        .track-qa .phase-segment:nth-child(1) {
+            background: linear-gradient(90deg, #4aff8c 0%, #4aff8c 10%, #5aff9b 50%, #6bffaa 90%, #6bffaa 100%);
+        }
+        .track-qa .phase-segment:nth-child(2) {
+            background: linear-gradient(90deg, #4aff8ce6 0%, #4aff8ce6 10%, #5aff9be6 50%, #6bffaae6 90%, #6bffaae6 100%);
+        }
+        .track-qa .phase-segment:nth-child(3) {
+            background: linear-gradient(90deg, #4aff8cb3 0%, #4aff8cb3 10%, #5aff9bb3 50%, #6bffaab3 90%, #6bffaab3 100%);
+        }
+        .track-qa .phase-segment:nth-child(4) {
+            background: linear-gradient(90deg, #4aff8c80 0%, #4aff8c80 10%, #5aff9b80 50%, #6bffaa80 90%, #6bffaa80 100%);
+        }
+
+        /* Legend */
+        .legend {
+            display: flex;
+            gap: 2rem;
+            justify-content: center;
+            margin-top: 2rem;
+            padding: 1rem;
+            background: rgba(26, 26, 26, 0.6);
+            border-radius: 8px;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .legend-color {
+            width: 30px;
+            height: 16px;
+            border-radius: 4px;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .legend-submission {
+            background: linear-gradient(90deg, #808080 0%, #a0a0a0 100%);
+        }
+
+        .legend-review {
+            background: linear-gradient(90deg, #808080cc 0%, #a0a0a0cc 100%);
+        }
+
+        .legend-appeals {
+            background: linear-gradient(90deg, #80808099 0%, #a0a0a099 100%);
+        }
+
+        .legend-completion {
+            background: linear-gradient(90deg, #80808066 0%, #a0a0a066 100%);
+        }
+
+        /* Interactive hover effect */
+        .calendar-bar:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.6);
+        }
+
+        .calendar-bar:hover .phase-segment {
+            border-right-color: rgba(255, 255, 255, 0.3);
+        }
+
+        /* Code display */
+        .code-block {
+            background: #1a1a1a;
+            border: 1px solid #333;
+            border-radius: 8px;
+            padding: 1rem;
+            margin-top: 1rem;
+            overflow-x: auto;
+        }
+
+        .code-block pre {
+            color: #a0ffa0;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9rem;
+            line-height: 1.5;
+        }
+
+        .highlight {
+            color: #f4ff3a;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎨 Gradient Calendar Demo</h1>
+        <p class="subtitle">Slow-Fast Gradient Effect: Gradual transitions within categories, sharp at boundaries</p>
+
+        <!-- Section 1: Comparison -->
+        <div class="demo-section">
+            <h2 class="section-title">1. Traditional vs Slow-Fast Gradient</h2>
+            <p class="section-description">
+                <strong>Traditional:</strong> Simple two-color gradient with smooth transition across the entire bar.
+            </p>
+            <div class="calendar-bar traditional-gradient">
+                <span class="calendar-bar-title">Traditional Gradient</span>
+            </div>
+
+            <p class="section-description">
+                <strong>Slow-Fast:</strong> Multiple phases with gradual color changes within each phase (slow), 
+                but sharp visual boundaries between phases (fast) created by borders.
+            </p>
+            <div class="calendar-bar slow-fast-bar">
+                <div class="phase-segment submission"></div>
+                <div class="phase-segment review"></div>
+                <div class="phase-segment appeals"></div>
+                <div class="phase-segment completion"></div>
+                <span class="calendar-bar-title">Slow-Fast Gradient</span>
+            </div>
+
+            <div class="code-block">
+                <pre>/* Each phase has <span class="highlight">gradual transitions within</span> (10%, 50%, 90% stops) */
+background: linear-gradient(90deg,
+    #4a9eff 0%,
+    #4a9eff <span class="highlight">10%</span>,    ← Slow start
+    #5ca9ff <span class="highlight">50%</span>,    ← Smooth mid
+    #6bb5ff <span class="highlight">90%</span>,    ← Slow end
+    #6bb5ff 100%
+);
+
+/* Sharp boundary via CSS border */
+border-right: 2px solid rgba(10, 10, 10, 0.5);</pre>
+            </div>
+        </div>
+
+        <!-- Section 2: Multiple Tracks -->
+        <div class="demo-section">
+            <h2 class="section-title">2. Different Challenge Tracks</h2>
+            <p class="section-description">
+                Each track (Development, Design, Data Science, QA) uses the same slow-fast gradient pattern
+                with track-specific colors and decreasing opacity across phases.
+            </p>
+
+            <div class="calendar-bar track-dev">
+                <div class="phase-segment" style="width: 30%"></div>
+                <div class="phase-segment" style="width: 25%"></div>
+                <div class="phase-segment" style="width: 25%"></div>
+                <div class="phase-segment" style="width: 20%"></div>
+                <span class="calendar-bar-title">Development Challenge (Blue)</span>
+            </div>
+
+            <div class="calendar-bar track-design">
+                <div class="phase-segment" style="width: 30%"></div>
+                <div class="phase-segment" style="width: 25%"></div>
+                <div class="phase-segment" style="width: 25%"></div>
+                <div class="phase-segment" style="width: 20%"></div>
+                <span class="calendar-bar-title">Design Challenge (Orange)</span>
+            </div>
+
+            <div class="calendar-bar track-ds">
+                <div class="phase-segment" style="width: 30%"></div>
+                <div class="phase-segment" style="width: 25%"></div>
+                <div class="phase-segment" style="width: 25%"></div>
+                <div class="phase-segment" style="width: 20%"></div>
+                <span class="calendar-bar-title">Data Science Challenge (Purple)</span>
+            </div>
+
+            <div class="calendar-bar track-qa">
+                <div class="phase-segment" style="width: 30%"></div>
+                <div class="phase-segment" style="width: 25%"></div>
+                <div class="phase-segment" style="width: 25%"></div>
+                <div class="phase-segment" style="width: 20%"></div>
+                <span class="calendar-bar-title">QA Challenge (Green)</span>
+            </div>
+        </div>
+
+        <!-- Section 3: Phase Legend -->
+        <div class="demo-section">
+            <h2 class="section-title">3. Phase Legend</h2>
+            <div class="legend">
+                <div class="legend-item">
+                    <div class="legend-color legend-submission"></div>
+                    <span>Submission (100%)</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color legend-review"></div>
+                    <span>Review (90%)</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color legend-appeals"></div>
+                    <span>Appeals (70%)</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color legend-completion"></div>
+                    <span>Completion (50%)</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Section 4: Key Concepts -->
+        <div class="demo-section">
+            <h2 class="section-title">4. Key Design Concepts</h2>
+            <div class="section-description">
+                <p><strong>✓ Slow Gradient (Within Category):</strong></p>
+                <ul style="margin-left: 2rem; margin-bottom: 1rem; line-height: 1.8;">
+                    <li>Uses multiple color stops (0%, 10%, 50%, 90%, 100%)</li>
+                    <li>Colors transition gradually across the phase width</li>
+                    <li>Creates smooth, visually appealing gradient effect</li>
+                </ul>
+
+                <p><strong>✓ Fast Gradient (At Category Borders):</strong></p>
+                <ul style="margin-left: 2rem; margin-bottom: 1rem; line-height: 1.8;">
+                    <li>Sharp 2px borders between phase segments</li>
+                    <li>Creates clear visual separation between categories</li>
+                    <li>Uses semi-transparent borders for subtle but effective contrast</li>
+                </ul>
+
+                <p><strong>✓ Progressive Opacity:</strong></p>
+                <ul style="margin-left: 2rem; line-height: 1.8;">
+                    <li>Submission: 100% opacity (fully visible)</li>
+                    <li>Review: 90% opacity (e6 suffix)</li>
+                    <li>Appeals: 70% opacity (b3 suffix)</li>
+                    <li>Completion: 50% opacity (80 suffix)</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Add interactive hover effect information
+        console.log('Gradient Calendar Demo loaded successfully!');
+        console.log('Hover over calendar bars to see enhanced border effects.');
+    </script>
+</body>
+</html>
