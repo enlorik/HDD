@@ -228,7 +228,7 @@ function Timeline() {
                       <div 
                         className={`phase-segment phase-completion ${event.phases.currentPhase === 'completed' ? 'phase-active' : ''}`}
                         style={{
-                          width: `${100 - event.phases.submission - event.phases.review - event.phases.appeals}%`,
+                          width: `${event.phases.completion}%`,
                           background: `linear-gradient(90deg, ${event.baseColors.start}66 0%, ${event.baseColors.end}66 100%)`
                         }}
                       />

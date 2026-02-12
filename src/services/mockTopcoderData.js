@@ -9,9 +9,9 @@ export const mockTopcoderChallenges = [
     name: 'Build a React Dashboard',
     registrationEndDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(), // 1 week from now
     submissionEndDate: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(), // 2 weeks from now
-    // Phase dates for timeline visualization
-    reviewStartDate: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(), // Review starts after submission
-    appealsStartDate: new Date(Date.now() + 17 * 24 * 60 * 60 * 1000).toISOString(), // Appeals start 3 days after review
+    // Phase dates for timeline visualization (with 1-day buffer between phases)
+    reviewStartDate: new Date(Date.now() + 15 * 24 * 60 * 60 * 1000).toISOString(), // Review starts 1 day after submission
+    appealsStartDate: new Date(Date.now() + 17 * 24 * 60 * 60 * 1000).toISOString(), // Appeals start 2 days after review
     completionDate: new Date(Date.now() + 19 * 24 * 60 * 60 * 1000).toISOString(), // Contest ends 2 days after appeals
     track: 'Dev',
     type: 'Code Challenge',
@@ -26,9 +26,9 @@ export const mockTopcoderChallenges = [
     name: 'Design Mobile App UI',
     registrationEndDate: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString(), // 3 days from now
     submissionEndDate: new Date(Date.now() + 10 * 24 * 60 * 60 * 1000).toISOString(), // 10 days from now
-    // Phase dates for timeline visualization
-    reviewStartDate: new Date(Date.now() + 10 * 24 * 60 * 60 * 1000).toISOString(), // Review starts after submission
-    appealsStartDate: new Date(Date.now() + 12 * 24 * 60 * 60 * 1000).toISOString(), // Appeals start 2 days after review
+    // Phase dates for timeline visualization (with 1-day buffer between phases)
+    reviewStartDate: new Date(Date.now() + 11 * 24 * 60 * 60 * 1000).toISOString(), // Review starts 1 day after submission
+    appealsStartDate: new Date(Date.now() + 12 * 24 * 60 * 60 * 1000).toISOString(), // Appeals start 1 day after review
     completionDate: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(), // Contest ends 2 days after appeals
     track: 'Des',
     type: 'Design Challenge',
@@ -43,9 +43,9 @@ export const mockTopcoderChallenges = [
     name: 'ML Model for Prediction',
     registrationEndDate: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000).toISOString(), // 5 days from now
     submissionEndDate: new Date(Date.now() + 21 * 24 * 60 * 60 * 1000).toISOString(), // 3 weeks from now
-    // Phase dates for timeline visualization
-    reviewStartDate: new Date(Date.now() + 21 * 24 * 60 * 60 * 1000).toISOString(), // Review starts after submission
-    appealsStartDate: new Date(Date.now() + 25 * 24 * 60 * 60 * 1000).toISOString(), // Appeals start 4 days after review
+    // Phase dates for timeline visualization (with 1-day buffer between phases)
+    reviewStartDate: new Date(Date.now() + 22 * 24 * 60 * 60 * 1000).toISOString(), // Review starts 1 day after submission
+    appealsStartDate: new Date(Date.now() + 25 * 24 * 60 * 60 * 1000).toISOString(), // Appeals start 3 days after review
     completionDate: new Date(Date.now() + 28 * 24 * 60 * 60 * 1000).toISOString(), // Contest ends 3 days after appeals
     track: 'DS',
     type: 'Algorithm Challenge',

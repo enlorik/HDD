@@ -96,7 +96,10 @@ export function formatChallengesForTimeline(challenges, referenceDate = new Date
     .map(challenge => {
       const registrationEnd = new Date(challenge.registrationEndDate);
       const submissionEnd = new Date(challenge.submissionEndDate);
-      const reviewStart = new Date(challenge.reviewStartDate || challenge.submissionEndDate);
+      // Ensure review starts after submission ends (minimum 1 day buffer if not provided)
+      const reviewStart = challenge.reviewStartDate 
+        ? new Date(challenge.reviewStartDate)
+        : new Date(submissionEnd.getTime() + 24 * 60 * 60 * 1000);
       const appealsStart = new Date(challenge.appealsStartDate || reviewStart.getTime() + 2 * 24 * 60 * 60 * 1000);
       const completion = new Date(challenge.completionDate || appealsStart.getTime() + 2 * 24 * 60 * 60 * 1000);
       
@@ -106,13 +109,25 @@ export function formatChallengesForTimeline(challenges, referenceDate = new Date
       
       // Calculate phase durations as percentages of total duration
       const totalDuration = completion - registrationEnd;
-      const submissionDuration = submissionEnd - registrationEnd;
-      const reviewDuration = appealsStart - submissionEnd;
-      const appealsDuration = completion - appealsStart;
       
-      const submissionPercent = (submissionDuration / totalDuration) * 100;
-      const reviewPercent = (reviewDuration / totalDuration) * 100;
-      const appealsPercent = (appealsDuration / totalDuration) * 100;
+      // Validate totalDuration to prevent division by zero
+      if (totalDuration <= 0) {
+        console.warn(`Invalid date range for challenge ${challenge.id}: totalDuration=${totalDuration}`);
+        return null; // Skip this challenge
+      }
+      
+      const submissionDuration = Math.max(0, submissionEnd - registrationEnd);
+      const reviewDuration = Math.max(0, appealsStart - submissionEnd);
+      const appealsDuration = Math.max(0, completion - appealsStart);
+      
+      // Calculate percentages and normalize to ensure they sum to 100%
+      let submissionPercent = (submissionDuration / totalDuration) * 100;
+      let reviewPercent = (reviewDuration / totalDuration) * 100;
+      let appealsPercent = (appealsDuration / totalDuration) * 100;
+      
+      // Calculate completion percent to ensure total is exactly 100%
+      const calculatedTotal = submissionPercent + reviewPercent + appealsPercent;
+      const completionPercent = 100 - calculatedTotal;
       
       // Determine current phase based on current date
       const now = new Date();
@@ -158,6 +173,7 @@ export function formatChallengesForTimeline(challenges, referenceDate = new Date
           submission: submissionPercent,
           review: reviewPercent,
           appeals: appealsPercent,
+          completion: Math.max(0, completionPercent), // Ensure non-negative
           currentPhase
         },
         type: 'topcoder',
@@ -169,5 +185,6 @@ export function formatChallengesForTimeline(challenges, referenceDate = new Date
         completionDate: challenge.completionDate,
         track: challenge.track
       };
-    });
+    })
+    .filter(event => event !== null); // Filter out invalid challenges
 }
