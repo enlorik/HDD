@@ -5,7 +5,7 @@
 import { mockTopcoderChallenges } from './mockTopcoderData';
 
 const TOPCODER_API_URL = 'https://api.topcoder.com/v5/challenges';
-const USE_MOCK_DATA = true; // Set to true to use mock data instead of API
+const USE_MOCK_DATA = false; // Set to true to use mock data instead of API
 
 /**
  * Fetch active Topcoder challenges from the API
