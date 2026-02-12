@@ -160,14 +160,7 @@
   overflow: hidden;
   text-overflow: ellipsis;
   flex: 1;
-}
-
-.event-arrow {
-  color: #000000;
-  font-size: 1.8rem;
-  font-weight: 700;
-  margin-left: 1rem;
-  line-height: 1;
+  max-width: calc(100% - 1.5rem);
 }
 
 /* Phase Legend */
@@ -260,15 +253,10 @@
   transform: translateY(-50%);
   z-index: 10;
   pointer-events: none;
-}
-
-.event-bar-phased .event-arrow {
-  position: absolute;
-  right: 1.5rem;
-  top: 50%;
-  transform: translateY(-50%);
-  z-index: 10;
-  pointer-events: none;
+  max-width: calc(100% - 3rem);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 @media (max-width: 768px) {

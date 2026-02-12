@@ -144,26 +144,46 @@ export function formatChallengesForTimeline(challenges, referenceDate = new Date
         currentPhase = 'review';
       }
       
-      // Determine gradient based on track
+      // Determine gradient based on track with distinct colors for smooth phase transitions
       let baseColors;
       switch (challenge.track) {
         case 'DEVELOP':
         case 'Dev':
-          baseColors = { start: '#4a9eff', end: '#6bb5ff' }; // Blue
+          baseColors = { 
+            start: '#4a9eff',  // Blue start
+            mid: '#5ca9ff',    // Blue mid
+            end: '#6bb5ff'     // Blue end
+          };
           break;
         case 'DESIGN':
         case 'Des':
-          baseColors = { start: '#ff6b3d', end: '#ff8c5c' }; // Orange
+          baseColors = { 
+            start: '#ff6b3d',  // Orange start
+            mid: '#ff7a4d',    // Orange mid
+            end: '#ff8c5c'     // Orange end
+          };
           break;
         case 'DATA_SCIENCE':
         case 'DS':
-          baseColors = { start: '#9c4aff', end: '#b56bff' }; // Purple
+          baseColors = { 
+            start: '#9c4aff',  // Purple start
+            mid: '#a75aff',    // Purple mid
+            end: '#b56bff'     // Purple end
+          };
           break;
         case 'QA':
-          baseColors = { start: '#4aff8c', end: '#6bffaa' }; // Green
+          baseColors = { 
+            start: '#4aff8c',  // Green start
+            mid: '#5aff9b',    // Green mid
+            end: '#6bffaa'     // Green end
+          };
           break;
         default:
-          baseColors = { start: '#808080', end: '#a0a0a0' }; // Gray
+          baseColors = { 
+            start: '#808080',  // Gray start
+            mid: '#909090',    // Gray mid
+            end: '#a0a0a0'     // Gray end
+          };
       }
 
       return {
