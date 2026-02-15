@@ -8,7 +8,12 @@
       "status": "UNSOLVED",
       "difficulty": "Medium",
       "category": "Railway Template Bounties",
-      "tags": ["Railway", "Template", "Next.js", "TypeScript"],
+      "tags": [
+        "Railway",
+        "Template",
+        "Next.js",
+        "TypeScript"
+      ],
       "source": "Railway",
       "url": "https://station.railway.com/bounties?bountyFilter=template",
       "scraped_at": "2024-02-15T15:00:00.000000"
@@ -21,7 +26,12 @@
       "status": "UNSOLVED",
       "difficulty": "Medium",
       "category": "Railway Template Bounties",
-      "tags": ["Railway", "Template", "Python", "FastAPI"],
+      "tags": [
+        "Railway",
+        "Template",
+        "Python",
+        "FastAPI"
+      ],
       "source": "Railway",
       "url": "https://station.railway.com/bounties?bountyFilter=template",
       "scraped_at": "2024-02-15T15:00:00.000000"
@@ -34,12 +44,18 @@
       "status": "UNSOLVED",
       "difficulty": "Easy",
       "category": "Railway Template Bounties",
-      "tags": ["Railway", "Template", "Discord", "Python"],
+      "tags": [
+        "Railway",
+        "Template",
+        "Discord",
+        "Python"
+      ],
       "source": "Railway",
       "url": "https://station.railway.com/bounties?bountyFilter=template",
       "scraped_at": "2024-02-15T15:00:00.000000"
     }
   ],
   "last_updated": "2024-02-15T15:00:00.000000",
-  "count": 3
+  "count": 3,
+  "last_attempted": "2026-02-15T15:59:47.742569"
 }

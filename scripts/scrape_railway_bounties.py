@@ -89,6 +89,21 @@ def parse_bounties(html_content: str) -> List[Dict]:
         
     Returns:
         List of bounty dictionaries
+        
+    Note:
+        The HTML selectors in this function are PLACEHOLDERS and MUST be updated
+        based on the actual structure of the Railway bounties page. To update:
+        
+        1. Visit https://station.railway.com/bounties?bountyFilter=template
+        2. Inspect the page HTML structure
+        3. Identify CSS classes for bounty cards, titles, descriptions, rewards
+        4. Update the selectors in this function accordingly
+        
+        Common selector patterns to look for:
+        - Bounty cards: [class*="bounty"], [class*="card"]
+        - Titles: h1, h2, h3 with [class*="title"]
+        - Descriptions: p, div with [class*="desc"]
+        - Rewards: span, div with [class*="reward"], [class*="prize"]
     """
     try:
         from bs4 import BeautifulSoup
@@ -101,6 +116,7 @@ def parse_bounties(html_content: str) -> List[Dict]:
     try:
         soup = BeautifulSoup(html_content, 'html.parser')
         
+        # PLACEHOLDER SELECTOR - Update based on actual Railway page structure
         # Note: This is a placeholder parsing logic.
         # The actual selectors need to be updated based on the real HTML structure
         # of the Railway bounties page.
@@ -127,13 +143,18 @@ def parse_bounties(html_content: str) -> List[Dict]:
                 if not title_elem:
                     continue
                 
+                # TODO: Add difficulty extraction logic based on actual Railway page structure
+                # For now, defaulting to 'Medium' as a reasonable middle-ground difficulty
+                # Update this when the actual HTML structure is known
+                difficulty = 'Medium'  # Default - should be extracted from page
+                
                 bounty = {
                     'id': f'railway-{idx + 1}-{int(time.time())}',
                     'title': title_elem.get_text(strip=True) if title_elem else 'Unknown Title',
                     'description': desc_elem.get_text(strip=True) if desc_elem else 'No description available',
                     'reward': reward_elem.get_text(strip=True) if reward_elem else 'TBD',
                     'status': 'UNSOLVED',
-                    'difficulty': 'Medium',  # Default difficulty
+                    'difficulty': difficulty,
                     'category': 'Railway Template Bounties',
                     'tags': ['Railway', 'Template'],
                     'source': 'Railway',
