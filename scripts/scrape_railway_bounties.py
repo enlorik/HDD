@@ -20,6 +20,7 @@ import json
 import os
 import sys
 import time
+import hashlib
 from datetime import datetime
 from typing import List, Dict, Optional
 import logging
@@ -148,9 +149,13 @@ def parse_bounties(html_content: str) -> List[Dict]:
                 # Update this when the actual HTML structure is known
                 difficulty = 'Medium'  # Default - should be extracted from page
                 
+                # Generate stable ID based on title hash to ensure consistency across scraping runs
+                title_text = title_elem.get_text(strip=True) if title_elem else 'Unknown Title'
+                title_hash = hashlib.md5(title_text.encode()).hexdigest()[:8]
+                
                 bounty = {
-                    'id': f'railway-{idx + 1}-{int(time.time())}',
-                    'title': title_elem.get_text(strip=True) if title_elem else 'Unknown Title',
+                    'id': f'railway-{title_hash}',
+                    'title': title_text,
                     'description': desc_elem.get_text(strip=True) if desc_elem else 'No description available',
                     'reward': reward_elem.get_text(strip=True) if reward_elem else 'TBD',
                     'status': 'UNSOLVED',

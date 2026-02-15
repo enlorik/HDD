@@ -1,7 +1,7 @@
 {
   "bounties": [
     {
-      "id": "railway-1-1708012800",
+      "id": "railway-8b4f5a1c",
       "title": "Build a Next.js Starter Template",
       "description": "Create a comprehensive Next.js 14 starter template with App Router, TypeScript, Tailwind CSS, and authentication setup. Should include best practices for folder structure and configuration.",
       "reward": "$250",
@@ -19,7 +19,7 @@
       "scraped_at": "2024-02-15T15:00:00.000000"
     },
     {
-      "id": "railway-2-1708012801",
+      "id": "railway-3c7d9e2a",
       "title": "FastAPI + PostgreSQL Template",
       "description": "Develop a production-ready FastAPI template with PostgreSQL integration, Docker setup, SQLAlchemy ORM, Alembic migrations, and basic CRUD operations. Include authentication and API documentation.",
       "reward": "$300",
@@ -37,7 +37,7 @@
       "scraped_at": "2024-02-15T15:00:00.000000"
     },
     {
-      "id": "railway-3-1708012802",
+      "id": "railway-7f2a1b8d",
       "title": "Discord Bot Starter Template",
       "description": "Create a Discord bot template using discord.py with command handling, event listeners, database integration, and deployment configuration for Railway. Include examples for common bot features.",
       "reward": "$200",
