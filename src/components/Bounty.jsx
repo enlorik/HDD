@@ -78,9 +78,6 @@ function Bounty() {
       tags: ['Backend', 'Database']
     }
   ];
-  
-  // Combine hardcoded and Railway bounties
-  const allBounties = [...hardcodedBounties, ...railwayBounties];
 
   const handleCardClick = (bounty) => {
     setSelectedBounty(bounty);
