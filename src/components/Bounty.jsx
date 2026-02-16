@@ -1,11 +1,32 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import './Bounty.css';
 
 function Bounty() {
   const [selectedBounty, setSelectedBounty] = useState(null);
+  const [railwayBounties, setRailwayBounties] = useState([]);
+  const [loadingRailway, setLoadingRailway] = useState(true);
+  
+  // Load Railway bounties from JSON file
+  useEffect(() => {
+    fetch('/railway-bounties.json')
+      .then(response => {
+        if (!response.ok) {
+          throw new Error('Failed to load Railway bounties');
+        }
+        return response.json();
+      })
+      .then(data => {
+        setRailwayBounties(data.bounties || []);
+        setLoadingRailway(false);
+      })
+      .catch(error => {
+        console.error('Error loading Railway bounties:', error);
+        setLoadingRailway(false);
+      });
+  }, []);
   
   // Hardcoded bounty data - only UNSOLVED bounties are shown
-  const bounties = [
+  const hardcodedBounties = [
     {
       id: 1,
       title: 'Fix Authentication Bug',
@@ -82,37 +103,82 @@ function Bounty() {
   return (
     <div className="bounty-container">
       <div className="bounty-content">
-        <div className="bounty-grid">
-          {bounties.map((bounty) => (
-            <div
-              key={bounty.id}
-              className="bounty-card"
-              onClick={() => handleCardClick(bounty)}
-              style={{ borderColor: getDifficultyColor(bounty.difficulty) }}
-            >
-              <div className="bounty-card-badges">
-                <span className="bounty-reward" aria-label={`Reward: ${bounty.reward}`}>
-                  <span className="coin-icon" aria-hidden="true">$</span>
-                  {bounty.reward}
-                </span>
-              </div>
-              <div className="bounty-card-header">
-                <h3 className="bounty-card-title">{bounty.title}</h3>
-              </div>
-              <p className="bounty-card-description">
-                {bounty.description}
-              </p>
-              {bounty.tags && bounty.tags.length > 0 && (
-                <div className="bounty-card-tags">
-                  {bounty.tags.map((tag, index) => (
-                    <span key={index} className="bounty-tag">
-                      {tag}
+        {loadingRailway && (
+          <div className="bounty-loading">Loading Railway bounties...</div>
+        )}
+        
+        {railwayBounties.length > 0 && (
+          <div className="bounty-section">
+            <h2 className="bounty-section-title">Railway Template Bounties</h2>
+            <div className="bounty-grid">
+              {railwayBounties.map((bounty) => (
+                <div
+                  key={bounty.id}
+                  className="bounty-card"
+                  onClick={() => handleCardClick(bounty)}
+                  style={{ borderColor: getDifficultyColor(bounty.difficulty) }}
+                >
+                  <div className="bounty-card-badges">
+                    <span className="bounty-reward" aria-label={`Reward: ${bounty.reward}`}>
+                      <span className="coin-icon" aria-hidden="true">$</span>
+                      {bounty.reward}
                     </span>
-                  ))}
+                  </div>
+                  <div className="bounty-card-header">
+                    <h3 className="bounty-card-title">{bounty.title}</h3>
+                  </div>
+                  <p className="bounty-card-description">
+                    {bounty.description}
+                  </p>
+                  {bounty.tags && bounty.tags.length > 0 && (
+                    <div className="bounty-card-tags">
+                      {bounty.tags.map((tag, index) => (
+                        <span key={index} className="bounty-tag">
+                          {tag}
+                        </span>
+                      ))}
+                    </div>
+                  )}
                 </div>
-              )}
+              ))}
             </div>
-          ))}
+          </div>
+        )}
+        
+        <div className="bounty-section">
+          <h2 className="bounty-section-title">Available Bounties</h2>
+          <div className="bounty-grid">
+            {hardcodedBounties.map((bounty) => (
+              <div
+                key={bounty.id}
+                className="bounty-card"
+                onClick={() => handleCardClick(bounty)}
+                style={{ borderColor: getDifficultyColor(bounty.difficulty) }}
+              >
+                <div className="bounty-card-badges">
+                  <span className="bounty-reward" aria-label={`Reward: ${bounty.reward}`}>
+                    <span className="coin-icon" aria-hidden="true">$</span>
+                    {bounty.reward}
+                  </span>
+                </div>
+                <div className="bounty-card-header">
+                  <h3 className="bounty-card-title">{bounty.title}</h3>
+                </div>
+                <p className="bounty-card-description">
+                  {bounty.description}
+                </p>
+                {bounty.tags && bounty.tags.length > 0 && (
+                  <div className="bounty-card-tags">
+                    {bounty.tags.map((tag, index) => (
+                      <span key={index} className="bounty-tag">
+                        {tag}
+                      </span>
+                    ))}
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
         </div>
       </div>
 

@@ -1,0 +1,61 @@
+{
+  "bounties": [
+    {
+      "id": "railway-8b4f5a1c",
+      "title": "Build a Next.js Starter Template",
+      "description": "Create a comprehensive Next.js 14 starter template with App Router, TypeScript, Tailwind CSS, and authentication setup. Should include best practices for folder structure and configuration.",
+      "reward": "$250",
+      "status": "UNSOLVED",
+      "difficulty": "Medium",
+      "category": "Railway Template Bounties",
+      "tags": [
+        "Railway",
+        "Template",
+        "Next.js",
+        "TypeScript"
+      ],
+      "source": "Railway",
+      "url": "https://station.railway.com/bounties?bountyFilter=template",
+      "scraped_at": "2024-02-15T15:00:00.000000"
+    },
+    {
+      "id": "railway-3c7d9e2a",
+      "title": "FastAPI + PostgreSQL Template",
+      "description": "Develop a production-ready FastAPI template with PostgreSQL integration, Docker setup, SQLAlchemy ORM, Alembic migrations, and basic CRUD operations. Include authentication and API documentation.",
+      "reward": "$300",
+      "status": "UNSOLVED",
+      "difficulty": "Medium",
+      "category": "Railway Template Bounties",
+      "tags": [
+        "Railway",
+        "Template",
+        "Python",
+        "FastAPI"
+      ],
+      "source": "Railway",
+      "url": "https://station.railway.com/bounties?bountyFilter=template",
+      "scraped_at": "2024-02-15T15:00:00.000000"
+    },
+    {
+      "id": "railway-7f2a1b8d",
+      "title": "Discord Bot Starter Template",
+      "description": "Create a Discord bot template using discord.py with command handling, event listeners, database integration, and deployment configuration for Railway. Include examples for common bot features.",
+      "reward": "$200",
+      "status": "UNSOLVED",
+      "difficulty": "Easy",
+      "category": "Railway Template Bounties",
+      "tags": [
+        "Railway",
+        "Template",
+        "Discord",
+        "Python"
+      ],
+      "source": "Railway",
+      "url": "https://station.railway.com/bounties?bountyFilter=template",
+      "scraped_at": "2024-02-15T15:00:00.000000"
+    }
+  ],
+  "last_updated": "2024-02-15T15:00:00.000000",
+  "count": 3,
+  "last_attempted": "2026-02-15T15:59:47.742569"
+}

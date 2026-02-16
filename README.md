@@ -18,6 +18,10 @@ A React + Vite web application featuring a timeline calendar dashboard and bount
 - Combines hardcoded events with live Topcoder challenges
 
 ### 2. Bounty Board
+- **Railway Template Bounties Integration**
+  - Automatically scrapes template bounties from Railway Station
+  - Daily updates via GitHub Actions
+  - Displays scraped bounties in a dedicated section
 - Displays UNSOLVED bounties as cards
 - Card preview shows:
   - Title and reward amount
@@ -27,6 +31,7 @@ A React + Vite web application featuring a timeline calendar dashboard and bount
 - Click any card to view full details in a modal
 - Supports four bounty states: UNSOLVED, SOLVED, GONE, ERROR
 - Clean, responsive card layout
+- Combines hardcoded bounties with Railway bounties
 
 ## Tech Stack
 
@@ -77,7 +82,11 @@ npm run lint
 HDD/
 ├── .github/
 │   └── workflows/
-│       └── update-topcoder.yml  # Daily Topcoder sync workflow
+│       ├── update-topcoder.yml         # Daily Topcoder sync workflow
+│       └── update-railway-bounties.yml # Daily Railway bounties scraper
+├── scripts/
+│   ├── scrape_railway_bounties.py      # Railway bounties scraper
+│   └── requirements.txt                # Python dependencies
 ├── src/
 │   ├── components/
 │   │   ├── Timeline.jsx      # Timeline calendar component
@@ -90,10 +99,13 @@ HDD/
 │   ├── App.css               # App-level styles
 │   ├── main.jsx              # Entry point
 │   └── index.css             # Global styles
-├── public/                   # Static assets
+├── public/
+│   └── railway-bounties.json # Scraped Railway bounties data
 ├── index.html               # HTML template
 ├── vite.config.js           # Vite configuration
-└── package.json             # Dependencies and scripts
+├── package.json             # Dependencies and scripts
+├── TOPCODER_INTEGRATION.md  # Topcoder integration docs
+└── RAILWAY_BOUNTIES.md      # Railway bounties docs
 ```
 
 ## Design System
@@ -137,6 +149,39 @@ A GitHub Actions workflow (`.github/workflows/update-topcoder.yml`) is configure
 - Can be manually triggered from the Actions tab
 
 The workflow ensures the application stays up-to-date with dependencies and validates that the Topcoder integration continues to function correctly.
+
+## Railway Bounties Integration
+
+### How It Works
+1. A Python scraper fetches template bounties from Railway Station daily
+2. The scraper parses the HTML and extracts bounty information
+3. Data is saved to `public/railway-bounties.json`
+4. The Bounty component automatically loads and displays Railway bounties
+5. Changes are committed automatically via GitHub Actions
+
+### Automated Updates
+A GitHub Actions workflow (`.github/workflows/update-railway-bounties.yml`) is configured to:
+- Run daily at midnight UTC
+- Scrape Railway template bounties
+- Update the JSON file with new bounties
+- Commit changes to the repository
+- Can be manually triggered from the Actions tab
+
+### Local Development
+To run the scraper locally:
+
+```bash
+# Install Python dependencies
+pip install -r scripts/requirements.txt
+
+# Run the scraper
+python3 scripts/scrape_railway_bounties.py
+
+# View the results
+cat public/railway-bounties.json
+```
+
+For detailed documentation, see [RAILWAY_BOUNTIES.md](RAILWAY_BOUNTIES.md).
 
 ## Future Enhancements
 

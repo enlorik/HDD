@@ -10,6 +10,26 @@
   margin: 0 auto;
 }
 
+.bounty-section {
+  margin-bottom: 3rem;
+}
+
+.bounty-section-title {
+  font-size: 1.8rem;
+  font-weight: 700;
+  color: #ffffff;
+  margin-bottom: 1.5rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 2px solid #353535;
+}
+
+.bounty-loading {
+  text-align: center;
+  padding: 2rem;
+  color: #999999;
+  font-size: 1.1rem;
+}
+
 .bounty-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
