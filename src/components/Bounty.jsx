@@ -123,6 +123,13 @@ function Bounty() {
     return [...(challenge.technologies || []), ...(challenge.tags || [])].slice(0, 4);
   };
 
+  const formatDate = (dateStr) => {
+    if (!dateStr) return 'TBD';
+    const d = new Date(dateStr);
+    if (isNaN(d.getTime())) return 'TBD';
+    return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
+  };
+
   return (
     <div className="bounty-container">
       <div className="bounty-content">
@@ -137,17 +144,25 @@ function Bounty() {
               {topcoderChallenges.map((challenge) => {
                 const tags = getTopcoderTags(challenge);
                 const reward = getTopcoderReward(challenge.prizeSets);
+                const trackColor = getTrackColor(challenge.track);
                 return (
                   <div
                     key={challenge.id}
                     className="bounty-card"
                     onClick={() => window.open(challenge.detailLink, '_blank', 'noopener,noreferrer')}
-                    style={{ borderColor: getTrackColor(challenge.track) }}
+                    style={{ borderColor: trackColor }}
                   >
                     <div className="bounty-card-badges">
                       <span className="bounty-reward" aria-label={`Reward: ${reward}`}>
                         <span className="coin-icon" aria-hidden="true">$</span>
                         {reward}
+                      </span>
+                      <span
+                        className="bounty-track-badge"
+                        style={{ backgroundColor: trackColor }}
+                        aria-label={`Track: ${challenge.track}`}
+                      >
+                        {challenge.track}
                       </span>
                     </div>
                     <div className="bounty-card-header">
@@ -156,6 +171,16 @@ function Bounty() {
                     <p className="bounty-card-description">
                       {challenge.overview || 'View challenge on Topcoder for details.'}
                     </p>
+                    <div className="bounty-card-dates">
+                      <span className="bounty-date-item">
+                        <span className="bounty-date-label">Reg. Ends:</span>
+                        <span className="bounty-date-value">{formatDate(challenge.registrationEndDate)}</span>
+                      </span>
+                      <span className="bounty-date-item">
+                        <span className="bounty-date-label">Sub. Ends:</span>
+                        <span className="bounty-date-value">{formatDate(challenge.submissionEndDate)}</span>
+                      </span>
+                    </div>
                     {tags.length > 0 && (
                       <div className="bounty-card-tags">
                         {tags.map((tag, index) => (
