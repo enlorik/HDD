@@ -1,27 +1,22 @@
 import { useState, useEffect } from 'react';
 import './Bounty.css';
+import { fetchTopcoderChallenges } from '../services/topcoderService';
 
 function Bounty() {
   const [selectedBounty, setSelectedBounty] = useState(null);
-  const [railwayBounties, setRailwayBounties] = useState([]);
-  const [loadingRailway, setLoadingRailway] = useState(true);
+  const [topcoderChallenges, setTopcoderChallenges] = useState([]);
+  const [loadingTopcoder, setLoadingTopcoder] = useState(true);
   
-  // Load Railway bounties from JSON file
+  // Load Topcoder challenges from the API
   useEffect(() => {
-    fetch('/railway-bounties.json')
-      .then(response => {
-        if (!response.ok) {
-          throw new Error('Failed to load Railway bounties');
-        }
-        return response.json();
-      })
-      .then(data => {
-        setRailwayBounties(data.bounties || []);
-        setLoadingRailway(false);
+    fetchTopcoderChallenges()
+      .then(challenges => {
+        setTopcoderChallenges(challenges);
+        setLoadingTopcoder(false);
       })
       .catch(error => {
-        console.error('Error loading Railway bounties:', error);
-        setLoadingRailway(false);
+        console.error('Error loading Topcoder challenges:', error);
+        setLoadingTopcoder(false);
       });
   }, []);
   
@@ -100,47 +95,79 @@ function Bounty() {
     }
   };
 
+  const getTrackColor = (track) => {
+    switch (track) {
+      case 'Dev':
+      case 'DEVELOP':
+        return '#4a9eff';
+      case 'Des':
+      case 'DESIGN':
+        return '#ff6b3d';
+      case 'DS':
+      case 'DATA_SCIENCE':
+        return '#9c4aff';
+      case 'QA':
+        return '#4aff8c';
+      default:
+        return '#999';
+    }
+  };
+
+  const getTopcoderReward = (prizeSets) => {
+    if (!prizeSets || prizeSets.length === 0) return 'TBD';
+    const firstPrize = prizeSets[0]?.prizes?.[0]?.value;
+    return firstPrize ? `$${firstPrize.toLocaleString()}` : 'TBD';
+  };
+
+  const getTopcoderTags = (challenge) => {
+    return [...(challenge.technologies || []), ...(challenge.tags || [])].slice(0, 4);
+  };
+
   return (
     <div className="bounty-container">
       <div className="bounty-content">
-        {loadingRailway && (
-          <div className="bounty-loading">Loading Railway bounties...</div>
+        {loadingTopcoder && (
+          <div className="bounty-loading">Loading Topcoder challenges...</div>
         )}
-        
-        {railwayBounties.length > 0 && (
+
+        {!loadingTopcoder && topcoderChallenges.length > 0 && (
           <div className="bounty-section">
-            <h2 className="bounty-section-title">Railway Template Bounties</h2>
+            <h2 className="bounty-section-title">Topcoder Challenges</h2>
             <div className="bounty-grid">
-              {railwayBounties.map((bounty) => (
-                <div
-                  key={bounty.id}
-                  className="bounty-card"
-                  onClick={() => handleCardClick(bounty)}
-                  style={{ borderColor: getDifficultyColor(bounty.difficulty) }}
-                >
-                  <div className="bounty-card-badges">
-                    <span className="bounty-reward" aria-label={`Reward: ${bounty.reward}`}>
-                      <span className="coin-icon" aria-hidden="true">$</span>
-                      {bounty.reward}
-                    </span>
-                  </div>
-                  <div className="bounty-card-header">
-                    <h3 className="bounty-card-title">{bounty.title}</h3>
-                  </div>
-                  <p className="bounty-card-description">
-                    {bounty.description}
-                  </p>
-                  {bounty.tags && bounty.tags.length > 0 && (
-                    <div className="bounty-card-tags">
-                      {bounty.tags.map((tag, index) => (
-                        <span key={index} className="bounty-tag">
-                          {tag}
-                        </span>
-                      ))}
+              {topcoderChallenges.map((challenge) => {
+                const tags = getTopcoderTags(challenge);
+                const reward = getTopcoderReward(challenge.prizeSets);
+                return (
+                  <div
+                    key={challenge.id}
+                    className="bounty-card"
+                    onClick={() => window.open(challenge.detailLink, '_blank', 'noopener,noreferrer')}
+                    style={{ borderColor: getTrackColor(challenge.track) }}
+                  >
+                    <div className="bounty-card-badges">
+                      <span className="bounty-reward" aria-label={`Reward: ${reward}`}>
+                        <span className="coin-icon" aria-hidden="true">$</span>
+                        {reward}
+                      </span>
                     </div>
-                  )}
-                </div>
-              ))}
+                    <div className="bounty-card-header">
+                      <h3 className="bounty-card-title">{challenge.name}</h3>
+                    </div>
+                    <p className="bounty-card-description">
+                      {challenge.overview || 'View challenge on Topcoder for details.'}
+                    </p>
+                    {tags.length > 0 && (
+                      <div className="bounty-card-tags">
+                        {tags.map((tag, index) => (
+                          <span key={index} className="bounty-tag">
+                            {tag}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
             </div>
           </div>
         )}
