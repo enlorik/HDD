@@ -20,8 +20,7 @@ function Timeline() {
         setError(null);
       } catch (err) {
         console.error('Failed to load Topcoder challenges:', err);
-        // Error is handled by the service with fallback data, so we don't show error UI
-        setError(null);
+        setError('Failed to load Topcoder challenges. Please try again later.');
       } finally {
         setLoading(false);
       }
@@ -112,6 +111,12 @@ function Timeline() {
       {error && (
         <div className="timeline-status error">
           <p>{error}</p>
+        </div>
+      )}
+
+      {!loading && !error && topcoderChallenges.length === 0 && (
+        <div className="timeline-status">
+          <p>No active Topcoder challenges found.</p>
         </div>
       )}
 
