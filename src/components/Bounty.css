@@ -30,6 +30,13 @@
   font-size: 1.1rem;
 }
 
+.bounty-empty {
+  text-align: center;
+  padding: 2rem;
+  color: #666666;
+  font-size: 1.1rem;
+}
+
 .bounty-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
@@ -93,6 +100,12 @@
   color: #ffffff;
   font-weight: 700;
   line-height: 1.3;
+}
+
+.bounty-track {
+  font-weight: 700;
+  font-size: 0.9rem;
+  white-space: nowrap;
 }
 
 .bounty-reward {
