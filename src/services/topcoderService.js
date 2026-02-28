@@ -7,44 +7,73 @@ import { mockTopcoderChallenges } from './mockTopcoderData';
 const TOPCODER_API_URL = 'https://api.topcoder.com/v5/challenges';
 const USE_MOCK_DATA = false; // Set to true to use mock data instead of API
 
+// Track values supported by the Topcoder v5 API
+const TRACKS = ['DEVELOP', 'DESIGN', 'DATA_SCIENCE', 'QA'];
+
 /**
  * Fetch active Topcoder challenges from the API
+ * Performs one request per track and merges/deduplicates the results.
  * @returns {Promise<Array>} Array of challenge objects
  */
 export async function fetchTopcoderChallenges() {
-  // Use mock data if configured or if in development mode
+  // Use mock data if configured
   if (USE_MOCK_DATA) {
     console.log('Using mock Topcoder data');
     return Promise.resolve(mockTopcoderChallenges);
   }
 
   try {
-    const params = new URLSearchParams({
-      status: 'ACTIVE',
-      'tracks[DS]': 'true',
-      'tracks[Des]': 'true',
-      'tracks[Dev]': 'true',
-      'tracks[QA]': 'true'
+    // Fetch one page per track; the v5 API requires a single track= value per request
+    const requests = TRACKS.map(track => {
+      const params = new URLSearchParams({
+        status: 'Active',
+        track,
+        perPage: '100'
+      });
+      return fetch(`${TOPCODER_API_URL}?${params.toString()}`);
     });
 
-    const response = await fetch(`${TOPCODER_API_URL}?${params.toString()}`);
-    
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
+    const responses = await Promise.all(requests);
+
+    for (const response of responses) {
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
     }
-    
-    const data = await response.json();
-    
+
+    const dataArrays = await Promise.all(responses.map(r => r.json()));
+
+    if (import.meta.env.DEV) {
+      dataArrays.forEach((data, i) => {
+        console.log(`[Topcoder] Track ${TRACKS[i]}: ${(data || []).length} challenges`);
+      });
+    }
+
+    // Merge all results and deduplicate by id
+    const seen = new Set();
+    const merged = [];
+    for (const data of dataArrays) {
+      for (const challenge of (data || [])) {
+        if (!seen.has(challenge.id)) {
+          seen.add(challenge.id);
+          merged.push(challenge);
+        }
+      }
+    }
+
+    if (import.meta.env.DEV) {
+      console.log(`[Topcoder] Total unique challenges: ${merged.length}`);
+    }
+
     // Extract and format relevant challenge data
-    const challenges = (data || []).map(challenge => {
-      // Calculate phase dates (mock placeholders if not provided by API)
-      const submissionEnd = new Date(challenge.submissionEndDate);
+    const challenges = merged.map(challenge => {
+      const submissionEnd = challenge.submissionEndDate ? new Date(challenge.submissionEndDate) : new Date();
       const reviewStart = challenge.reviewStartDate ? new Date(challenge.reviewStartDate) : submissionEnd;
-      const appealsStart = challenge.appealsStartDate ? new Date(challenge.appealsStartDate) : 
+      const appealsStart = challenge.appealsStartDate ? new Date(challenge.appealsStartDate) :
         new Date(reviewStart.getTime() + 2 * 24 * 60 * 60 * 1000); // 2 days after review
-      const completion = challenge.completionDate ? new Date(challenge.completionDate) : 
+      const completion = challenge.completionDate ? new Date(challenge.completionDate) :
         new Date(appealsStart.getTime() + 2 * 24 * 60 * 60 * 1000); // 2 days after appeals
-      
+
       return {
         id: challenge.id,
         name: challenge.name || 'Untitled Challenge',
@@ -62,13 +91,17 @@ export async function fetchTopcoderChallenges() {
         detailLink: `https://www.topcoder.com/challenges/${challenge.id}`
       };
     });
-    
+
     return challenges;
   } catch (error) {
     console.error('Error fetching Topcoder challenges:', error);
-    // Fall back to mock data on error (useful for development/testing)
-    console.log('Falling back to mock Topcoder data');
-    return mockTopcoderChallenges;
+    if (import.meta.env.DEV) {
+      // In development fall back to mock data so the UI remains usable
+      console.log('Falling back to mock Topcoder data (DEV mode)');
+      return mockTopcoderChallenges;
+    }
+    // In production re-throw so the UI can display a proper error state
+    throw error;
   }
 }
 
