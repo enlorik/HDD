@@ -30,37 +30,8 @@ function Timeline() {
     loadChallenges();
   }, [currentDate]);
   
-  // Hardcoded event data with new gradient colors
-  const events = [
-    {
-      id: 1,
-      title: 'Project Alpha',
-      startWeek: -1,
-      duration: 3,
-      gradient: 'linear-gradient(90deg, #ff6b3d 0%, #ffb03d 100%)'
-    },
-    {
-      id: 2,
-      title: 'Beta Release',
-      startWeek: 1,
-      duration: 2,
-      gradient: 'linear-gradient(90deg, #ffb03d 0%, #f4ff3a 100%)'
-    },
-    {
-      id: 3,
-      title: 'Gamma Testing',
-      startWeek: 2,
-      duration: 4,
-      gradient: 'linear-gradient(90deg, #ff4d3d 0%, #ff6b3d 100%)'
-    },
-    {
-      id: 4,
-      title: 'Delta Deployment',
-      startWeek: 4,
-      duration: 2,
-      gradient: 'linear-gradient(90deg, #ff6b3d 0%, #ffb03d 100%)'
-    }
-  ];
+  // Topcoder challenges are the only events displayed
+  const allEvents = topcoderChallenges;
 
   // Calculate week information
   const getWeekNumber = (date) => {
@@ -83,9 +54,6 @@ function Timeline() {
     const day = date.getDate();
     return `${month} ${day}`;
   };
-
-  // Combine hardcoded events with Topcoder challenges
-  const allEvents = [...events, ...topcoderChallenges];
 
   return (
     <div className="timeline-container">
