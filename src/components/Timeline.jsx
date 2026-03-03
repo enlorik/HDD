@@ -1,36 +1,36 @@
 import { useState, useEffect } from 'react';
 import './Timeline.css';
-import { fetchTopcoderChallenges, formatChallengesForTimeline } from '../services/topcoderService';
+import { fetchCodeforcesContests, formatContestsForTimeline } from '../services/codeforcesService';
 
 function Timeline() {
   const [currentDate] = useState(new Date());
   const [activeTab, setActiveTab] = useState('events-calendar');
-  const [topcoderChallenges, setTopcoderChallenges] = useState([]);
+  const [codeforcesContests, setCodeforcesContests] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   
-  // Fetch Topcoder challenges on component mount
+  // Fetch Codeforces contests on component mount
   useEffect(() => {
-    async function loadChallenges() {
+    async function loadContests() {
       try {
         setLoading(true);
-        const challenges = await fetchTopcoderChallenges();
-        const formattedEvents = formatChallengesForTimeline(challenges, currentDate);
-        setTopcoderChallenges(formattedEvents);
+        const contests = await fetchCodeforcesContests();
+        const formattedEvents = formatContestsForTimeline(contests, currentDate);
+        setCodeforcesContests(formattedEvents);
         setError(null);
       } catch (err) {
-        console.error('Failed to load Topcoder challenges:', err);
-        setError('Failed to load Topcoder challenges. Please try again later.');
+        console.error('Failed to load Codeforces contests:', err);
+        setError('Failed to load Codeforces contests. Please try again later.');
       } finally {
         setLoading(false);
       }
     }
     
-    loadChallenges();
+    loadContests();
   }, [currentDate]);
   
-  // Topcoder challenges are the only events displayed
-  const allEvents = topcoderChallenges;
+  // Codeforces contests are the only events displayed
+  const allEvents = codeforcesContests;
 
   // Calculate week information
   const getWeekNumber = (date) => {
@@ -78,33 +78,10 @@ function Timeline() {
         </button>
       </div>
 
-      {/* Phase Legend */}
-      <div className="phase-legend">
-        <div className="legend-title">Contest Phases:</div>
-        <div className="legend-items">
-          <div className="legend-item">
-            <div className="legend-color legend-submission"></div>
-            <span>Submission</span>
-          </div>
-          <div className="legend-item">
-            <div className="legend-color legend-review"></div>
-            <span>Review</span>
-          </div>
-          <div className="legend-item">
-            <div className="legend-color legend-appeals"></div>
-            <span>Appeals</span>
-          </div>
-          <div className="legend-item">
-            <div className="legend-color legend-completion"></div>
-            <span>Completion</span>
-          </div>
-        </div>
-      </div>
-
       {/* Loading and Error States */}
       {loading && (
         <div className="timeline-status">
-          <p>Loading Topcoder challenges...</p>
+          <p>Loading Codeforces contests...</p>
         </div>
       )}
       
@@ -114,9 +91,9 @@ function Timeline() {
         </div>
       )}
 
-      {!loading && !error && topcoderChallenges.length === 0 && (
+      {!loading && !error && codeforcesContests.length === 0 && (
         <div className="timeline-status">
-          <p>No active Topcoder challenges found.</p>
+          <p>No active Codeforces contests found.</p>
         </div>
       )}
 
@@ -143,73 +120,27 @@ function Timeline() {
               const leftPercent = ((event.startWeek + 3) / weeksToShow) * 100;
               const widthPercent = (event.duration / weeksToShow) * 100;
               
-              // Check if this is a Topcoder event with phase data
-              const hasPhases = event.type === 'topcoder' && event.phases;
-              
               // Build tooltip text
               let tooltipText = event.title;
-              if (event.type === 'topcoder') {
-                tooltipText += ` (${event.track})`;
-                if (hasPhases) {
-                  const phaseLabels = {
-                    submission: 'Submission Phase',
-                    review: 'Review Phase',
-                    appeals: 'Appeals Phase',
-                    completed: 'Completed'
-                  };
-                  tooltipText += `\nCurrent: ${phaseLabels[event.phases.currentPhase]}`;
-                }
+              if (event.type === 'codeforces') {
+                tooltipText += ` (${event.contestType})`;
+                tooltipText += `\nPhase: ${event.phase}`;
               }
               
               return (
                 <div
                   key={event.id}
-                  className={`event-bar ${hasPhases ? 'event-bar-phased' : ''}`}
+                  className="event-bar"
                   style={{
                     left: `${leftPercent}%`,
                     width: `${widthPercent}%`,
-                    background: hasPhases ? 'transparent' : event.gradient,
+                    background: event.gradient,
                     top: `${index * 70 + 10}px`
                   }}
                   onClick={() => event.detailLink && window.open(event.detailLink, '_blank', 'noopener,noreferrer')}
                   title={tooltipText}
                 >
-                  {hasPhases ? (
-                    <>
-                      {/* Phase segments with smooth gradient transitions */}
-                      <div 
-                        className={`phase-segment phase-submission ${event.phases.currentPhase === 'submission' ? 'phase-active' : ''}`}
-                        style={{
-                          width: `${event.phases.submission}%`,
-                          background: `linear-gradient(90deg, ${event.baseColors.start} 0%, ${event.baseColors.mid} 50%, ${event.baseColors.end} 100%)`
-                        }}
-                      />
-                      <div 
-                        className={`phase-segment phase-review ${event.phases.currentPhase === 'review' ? 'phase-active' : ''}`}
-                        style={{
-                          width: `${event.phases.review}%`,
-                          background: `linear-gradient(90deg, ${event.baseColors.start}e6 0%, ${event.baseColors.mid}e6 50%, ${event.baseColors.end}e6 100%)`
-                        }}
-                      />
-                      <div 
-                        className={`phase-segment phase-appeals ${event.phases.currentPhase === 'appeals' ? 'phase-active' : ''}`}
-                        style={{
-                          width: `${event.phases.appeals}%`,
-                          background: `linear-gradient(90deg, ${event.baseColors.start}b3 0%, ${event.baseColors.mid}b3 50%, ${event.baseColors.end}b3 100%)`
-                        }}
-                      />
-                      <div 
-                        className={`phase-segment phase-completion ${event.phases.currentPhase === 'completed' ? 'phase-active' : ''}`}
-                        style={{
-                          width: `${event.phases.completion}%`,
-                          background: `linear-gradient(90deg, ${event.baseColors.start}80 0%, ${event.baseColors.mid}80 50%, ${event.baseColors.end}80 100%)`
-                        }}
-                      />
-                      <span className="event-title">{event.title}</span>
-                    </>
-                  ) : (
-                    <span className="event-title">{event.title}</span>
-                  )}
+                  <span className="event-title">{event.title}</span>
                 </div>
               );
             })}

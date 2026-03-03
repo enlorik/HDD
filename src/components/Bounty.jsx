@@ -1,38 +1,33 @@
 import { useState, useEffect } from 'react';
 import './Bounty.css';
-import { fetchTopcoderChallenges, formatChallengesForTimeline } from '../services/topcoderService';
+import { fetchCodeforcesContests } from '../services/codeforcesService';
 
 function Bounty() {
-  const [challenges, setChallenges] = useState([]);
+  const [contests, setContests] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    fetchTopcoderChallenges()
-      .then(raw => {
-        setChallenges(formatChallengesForTimeline(raw));
+    fetchCodeforcesContests()
+      .then(data => {
+        setContests(data);
         setLoading(false);
       })
       .catch(err => {
-        console.error('Error loading Topcoder challenges:', err);
-        setError('Failed to load challenges.');
+        console.error('Error loading Codeforces contests:', err);
+        setError('Failed to load contests.');
         setLoading(false);
       });
   }, []);
 
-  const getTrackColor = (track) => {
-    switch (track) {
-      case 'Dev':
-      case 'DEVELOP':
+  const getTypeColor = (type) => {
+    switch (type) {
+      case 'CF':
         return '#4a9eff';
-      case 'Des':
-      case 'DESIGN':
+      case 'IOI':
         return '#ff6b3d';
-      case 'DS':
-      case 'DATA_SCIENCE':
+      case 'ICPC':
         return '#9c4aff';
-      case 'QA':
-        return '#4aff8c';
       default:
         return '#999';
     }
@@ -42,45 +37,45 @@ function Bounty() {
     <div className="bounty-container">
       <div className="bounty-content">
         {loading && (
-          <div className="bounty-loading">Loading Topcoder challenges...</div>
+          <div className="bounty-loading">Loading Codeforces contests...</div>
         )}
 
         {!loading && error && (
           <div className="bounty-empty">{error}</div>
         )}
 
-        {!loading && !error && challenges.length === 0 && (
-          <div className="bounty-empty">No active Topcoder challenges found.</div>
+        {!loading && !error && contests.length === 0 && (
+          <div className="bounty-empty">No active Codeforces contests found.</div>
         )}
 
-        {!loading && challenges.length > 0 && (
+        {!loading && contests.length > 0 && (
           <div className="bounty-section">
-            <h2 className="bounty-section-title">Topcoder Challenges</h2>
+            <h2 className="bounty-section-title">Codeforces Contests</h2>
             <div className="bounty-grid">
-              {challenges.map((challenge) => (
+              {contests.map((contest) => (
                 <div
-                  key={challenge.id}
+                  key={contest.id}
                   className="bounty-card"
-                  onClick={() => window.open(challenge.detailLink, '_blank', 'noopener,noreferrer')}
-                  style={{ borderColor: getTrackColor(challenge.track) }}
+                  onClick={() => window.open(contest.detailLink, '_blank', 'noopener,noreferrer')}
+                  style={{ borderColor: getTypeColor(contest.type) }}
                 >
                   <div className="bounty-card-badges">
                     <span
                       className="bounty-track"
-                      style={{ color: getTrackColor(challenge.track) }}
+                      style={{ color: getTypeColor(contest.type) }}
                     >
-                      {challenge.track}
+                      {contest.type}
                     </span>
                   </div>
                   <div className="bounty-card-header">
-                    <h3 className="bounty-card-title">{challenge.title}</h3>
+                    <h3 className="bounty-card-title">{contest.name}</h3>
                   </div>
                   <p className="bounty-card-description">
-                    Phase: {challenge.phases?.currentPhase || 'N/A'}{' '}
+                    Phase: {contest.phase}{' '}
                     <span aria-hidden="true">&middot;</span>{' '}
-                    Deadline:{' '}
-                    {challenge.submissionEndDate
-                      ? new Date(challenge.submissionEndDate).toLocaleDateString()
+                    Start:{' '}
+                    {contest.startTimeSeconds
+                      ? new Date(contest.startTimeSeconds * 1000).toLocaleDateString()
                       : 'N/A'}
                   </p>
                 </div>
