@@ -4,24 +4,26 @@ A React + Vite web application featuring a timeline calendar dashboard and bount
 
 ## Features
 
-### 1. Timeline Dashboard with Topcoder Integration
+### 1. Timeline Dashboard with Codeforces Integration
 - Dark, calm dashboard-style UI (not a grid layout)
 - Weekly view with weeks displayed as columns
 - Vertical "Today" line marking the current week
 - Rounded horizontal event bars spanning multiple weeks
 - Color-coded events with hover effects
-- **Real-time Topcoder challenge integration**
-  - Fetches active challenges from Topcoder API
-  - Displays registration and submission deadlines
-  - Color-coded by track (Dev, Design, Data Science, QA)
-  - Clickable events that open challenge details on Topcoder
-- Combines hardcoded events with live Topcoder challenges
+- **Real-time Codeforces contest integration**
+  - Fetches upcoming and active contests from the Codeforces API
+  - Displays contest start and end dates
+  - Color-coded by contest type (CF, IOI, ICPC)
+  - Clickable events that open contest details on Codeforces
 
 ### 2. Bounty Board
 - **Railway Template Bounties Integration**
   - Automatically scrapes template bounties from Railway Station
   - Daily updates via GitHub Actions
   - Displays scraped bounties in a dedicated section
+- **Codeforces Contests Integration**
+  - Fetches upcoming and active contests from the Codeforces API
+  - Displays contests as cards with type, phase, and start date
 - Displays UNSOLVED bounties as cards
 - Card preview shows:
   - Title and reward amount
@@ -31,7 +33,6 @@ A React + Vite web application featuring a timeline calendar dashboard and bount
 - Click any card to view full details in a modal
 - Supports four bounty states: UNSOLVED, SOLVED, GONE, ERROR
 - Clean, responsive card layout
-- Combines hardcoded bounties with Railway bounties
 
 ## Tech Stack
 
@@ -82,7 +83,6 @@ npm run lint
 HDD/
 ├── .github/
 │   └── workflows/
-│       ├── update-topcoder.yml         # Daily Topcoder sync workflow
 │       └── update-railway-bounties.yml # Daily Railway bounties scraper
 ├── scripts/
 │   ├── scrape_railway_bounties.py      # Railway bounties scraper
@@ -94,7 +94,8 @@ HDD/
 │   │   ├── Bounty.jsx        # Bounty board component
 │   │   └── Bounty.css        # Bounty styles
 │   ├── services/
-│   │   └── topcoderService.js  # Topcoder API integration
+│   │   ├── codeforcesService.js  # Codeforces API integration
+│   │   └── mockCodeforcesData.js # Mock data for development
 │   ├── App.jsx               # Main app with routing
 │   ├── App.css               # App-level styles
 │   ├── main.jsx              # Entry point
@@ -104,7 +105,6 @@ HDD/
 ├── index.html               # HTML template
 ├── vite.config.js           # Vite configuration
 ├── package.json             # Dependencies and scripts
-├── TOPCODER_INTEGRATION.md  # Topcoder integration docs
 └── RAILWAY_BOUNTIES.md      # Railway bounties docs
 ```
 
@@ -117,38 +117,28 @@ The app uses a consistent dark theme:
 - Text: `#eaeaea`
 - Accents: Various colors for different elements
 
-### Topcoder Track Colors
-- **Development**: Blue gradient (`#4a9eff` to `#6bb5ff`)
-- **Design**: Orange gradient (`#ff6b3d` to `#ff8c5c`)
-- **Data Science**: Purple gradient (`#9c4aff` to `#b56bff`)
-- **QA**: Green gradient (`#4aff8c` to `#6bffaa`)
+### Codeforces Contest Type Colors
+- **CF**: Blue gradient (`#4a9eff` to `#6bb5ff`)
+- **IOI**: Orange gradient (`#ff6b3d` to `#ff8c5c`)
+- **ICPC**: Purple gradient (`#9c4aff` to `#b56bff`)
 
-## Topcoder Integration
+## Codeforces Integration
 
 ### How It Works
-1. The Timeline component automatically fetches active Topcoder challenges when loaded
-2. Challenges are displayed alongside hardcoded events in the timeline
-3. Each challenge bar is color-coded by its track (Dev/Design/DS/QA)
-4. Clicking a challenge bar opens the challenge details page on Topcoder
+1. The Timeline and Bounty components automatically fetch upcoming/active Codeforces contests when loaded
+2. Contests are displayed as color-coded bars in the timeline
+3. Each bar is color-coded by its type (CF/IOI/ICPC)
+4. Clicking a contest bar opens the contest page on Codeforces
 5. The data is fetched fresh on each page load
 
 ### API Integration
-- **Endpoint**: `https://api.topcoder.com/v5/challenges`
-- **Filters**: Active challenges across Dev, Design, Data Science, and QA tracks
+- **Endpoint**: `https://codeforces.com/api/contest.list`
+- **Filters**: Upcoming (`BEFORE`) and active (`CODING`) contests
 - **Data Extracted**:
-  - Challenge name
-  - Registration end date
-  - Submission end date
-  - Track type
-  - Challenge ID for detail links
-
-### Automated Updates
-A GitHub Actions workflow (`.github/workflows/update-topcoder.yml`) is configured to:
-- Run daily at midnight UTC
-- Build the application to verify integration
-- Can be manually triggered from the Actions tab
-
-The workflow ensures the application stays up-to-date with dependencies and validates that the Topcoder integration continues to function correctly.
+  - Contest name and ID
+  - Contest type (CF, IOI, ICPC)
+  - Phase (BEFORE, CODING)
+  - Start time and duration
 
 ## Railway Bounties Integration
 
@@ -189,8 +179,8 @@ For detailed documentation, see [RAILWAY_BOUNTIES.md](RAILWAY_BOUNTIES.md).
 - Implement backend integration for bounty states
 - Add user authentication
 - Mobile app version
-- Cache Topcoder challenges for better performance
-- Add more detailed challenge information in tooltips
+- Cache Codeforces contests for better performance
+- Add more detailed contest information in tooltips
 
 ## License
 
