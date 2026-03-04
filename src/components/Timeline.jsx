@@ -28,6 +28,16 @@ function Timeline() {
         const contests = await fetchCodeforcesContests();
         const formattedEvents = formatContestsForTimeline(contests, currentDate);
         setCodeforcesContests(formattedEvents);
+        // Ensure every newly fetched event has an explicit true/false entry so
+        // the default-enabled assumption doesn't silently add new clutter.
+        setEnabledEvents(prev => {
+          const next = { ...prev };
+          let changed = false;
+          formattedEvents.forEach(e => {
+            if (!(e.id in next)) { next[e.id] = true; changed = true; }
+          });
+          return changed ? next : prev;
+        });
         setError(null);
       } catch (err) {
         console.error('Failed to load Codeforces contests:', err);
@@ -203,7 +213,9 @@ function Timeline() {
                 onClick={() => toggleEvent(event.id)}
                 title={enabled ? 'Click to remove from calendar' : 'Click to add to calendar'}
               >
-                {/* Checkbox to opt-in / opt-out; click handled by the bubble wrapper */}
+                {/* Checkbox to opt-in / opt-out.
+                    onChange handles checkbox-click toggle;
+                    onClick stops propagation so the bubble's onClick doesn't fire too. */}
                 <input
                   type="checkbox"
                   className="tl-checkbox"
