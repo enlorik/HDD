@@ -15,13 +15,13 @@ function Navigation() {
             to="/" 
             className={`nav-link ${location.pathname === '/' ? 'active' : ''}`}
           >
-            Timeline
+            <span>Timeline</span>
           </Link>
           <Link 
             to="/bounty" 
             className={`nav-link ${location.pathname === '/bounty' ? 'active' : ''}`}
           >
-            Bounty
+            <span>Bounty</span>
           </Link>
         </div>
       </div>
