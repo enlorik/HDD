@@ -9,6 +9,24 @@ const TIMUS_BASE_URL = 'https://acm.timus.ru';
 const USE_MOCK_DATA = false; // Set to true to use mock data instead of static JSON
 
 /**
+ * Languages supported by Timus Online Judge for submission.
+ * Each entry has a label shown in the UI and the value passed to the submission URL.
+ */
+export const TIMUS_LANGUAGES = [
+  { label: 'GNU C++17', value: '93' },
+  { label: 'GNU C++14', value: '88' },
+  { label: 'GNU C++11', value: '75' },
+  { label: 'Microsoft Visual C++ 2017', value: '90' },
+  { label: 'GNU C11', value: '87' },
+  { label: 'Java 11', value: '92' },
+  { label: 'Python 3', value: '91' },
+  { label: 'Free Pascal 3.0', value: '65' },
+  { label: 'Haskell GHC 8.8', value: '94' },
+  { label: 'Go 1.13', value: '95' },
+  { label: 'Ruby 2.7', value: '96' },
+];
+
+/**
  * Fetch Timus problems, optionally filtered by category, sorted by difficulty (easiest first)
  * @param {string|null} category - Category to filter by, or null for all categories
  * @returns {Promise<{ problems: Array, categories: Array }>}
@@ -53,6 +71,42 @@ export async function fetchTimusProblems(category = null) {
       return { problems: sortByDifficulty(problems), categories: mockTimusCategories };
     }
     throw error;
+  }
+}
+
+/**
+ * Attempt to fetch the set of problem IDs that a user has solved on Timus.
+ * Timus does not expose a CORS-friendly JSON API, so this request will typically
+ * be blocked by the browser's same-origin policy.  The function returns null
+ * when it cannot retrieve the data so the caller can fall back to manual tracking.
+ *
+ * @param {string} judgeId - The user's numeric Timus Judge ID
+ * @returns {Promise<Set<number>|null>} Set of solved problem IDs, or null on failure
+ */
+export async function fetchUserSolvedProblems(judgeId) {
+  if (!judgeId) return null;
+
+  try {
+    // Timus author page lists all accepted solutions; we attempt a no-cors fetch
+    // to see if CORS headers permit reading the response.
+    const url = `${TIMUS_BASE_URL}/author.aspx?id=${encodeURIComponent(judgeId)}&space=1&action=getstat`;
+    const response = await fetch(url, { signal: AbortSignal.timeout(8000) });
+
+    if (!response.ok) return null;
+
+    const text = await response.text();
+    // Extract problem IDs from links of the form: problem.aspx?space=1&num=XXXX
+    const matches = [...text.matchAll(/problem\.aspx\?space=1&num=(\d+)/g)];
+    const ids = new Set(matches.map(m => parseInt(m[1], 10)));
+
+    if (import.meta.env.DEV) {
+      console.log(`[Timus] Fetched ${ids.size} solved problems for judge ID ${judgeId}`);
+    }
+
+    return ids.size > 0 ? ids : null;
+  } catch {
+    // CORS block or network error — return null to signal fallback to manual tracking
+    return null;
   }
 }
 
@@ -103,3 +157,4 @@ export function openSubmissionPage(problemId, judgeId = null) {
   const url = getSubmissionUrl(problemId, judgeId);
   window.open(url, '_blank', 'noopener,noreferrer');
 }
+

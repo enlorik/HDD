@@ -27,6 +27,29 @@
   margin-top: 0.5rem;
 }
 
+.timus-sync-notice {
+  font-size: 0.88rem;
+  margin-top: 0.5rem;
+  padding: 0.4rem 0.75rem;
+  border-radius: 6px;
+  display: inline-block;
+}
+
+.timus-sync-notice--loading {
+  color: #888888;
+  background-color: #1a1a1a;
+}
+
+.timus-sync-notice--ok {
+  color: #4caf50;
+  background-color: rgba(76, 175, 80, 0.1);
+}
+
+.timus-sync-notice--warn {
+  color: #ff9800;
+  background-color: rgba(255, 152, 0, 0.1);
+}
+
 .timus-link {
   color: #4a9eff;
   text-decoration: none;
@@ -177,6 +200,10 @@
 
 .timus-row:hover {
   background-color: #161616;
+}
+
+.timus-row--clickable {
+  cursor: pointer;
 }
 
 .timus-row--solved {

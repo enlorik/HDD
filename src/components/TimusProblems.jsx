@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import './TimusProblems.css';
-import { fetchTimusProblems, openSubmissionPage, getProblemUrl } from '../services/timusService';
+import { fetchTimusProblems, fetchUserSolvedProblems, openSubmissionPage } from '../services/timusService';
 
 const STORAGE_KEY = 'hdd-user-profile';
 const SOLVED_KEY = 'timus-solved-problems';
@@ -45,6 +46,7 @@ function saveSolvedProblems(solvedIds) {
 }
 
 function TimusProblems() {
+  const navigate = useNavigate();
   const [problems, setProblems] = useState([]);
   const [categories, setCategories] = useState([]);
   const [selectedCategory, setSelectedCategory] = useState('all');
@@ -53,7 +55,8 @@ function TimusProblems() {
   const [solvedIds, setSolvedIds] = useState(() => loadSolvedProblems());
   const [judgeId, setJudgeId] = useState(() => loadJudgeId());
   const [showSolvedOnly, setShowSolvedOnly] = useState(false);
-  const [showUnsolvedOnly, setShowUnsolvedOnly] = useState(false);
+  const [showUnsolvedOnly, setShowUnsolvedOnly] = useState(() => Boolean(loadJudgeId()));
+  const [syncStatus, setSyncStatus] = useState(null); // null | 'syncing' | 'synced' | 'unavailable'
 
   useEffect(() => {
     async function loadProblems() {
@@ -75,9 +78,29 @@ function TimusProblems() {
     loadProblems();
   }, [selectedCategory]);
 
+  // Auto-sync solved problems from Timus when judgeId is available
+  useEffect(() => {
+    if (!judgeId) return;
+    setSyncStatus('syncing');
+    fetchUserSolvedProblems(judgeId).then(ids => {
+      if (ids && ids.size > 0) {
+        const newSolved = [...ids];
+        setSolvedIds(newSolved);
+        saveSolvedProblems(newSolved);
+        setSyncStatus('synced');
+      } else {
+        setSyncStatus('unavailable');
+      }
+    });
+  }, [judgeId]);
+
   // Reload judgeId whenever the component gains focus (user may have updated profile)
   useEffect(() => {
-    const refresh = () => setJudgeId(loadJudgeId());
+    const refresh = () => {
+      const id = loadJudgeId();
+      setJudgeId(id);
+      if (id) setShowUnsolvedOnly(true);
+    };
     window.addEventListener('focus', refresh);
     return () => window.removeEventListener('focus', refresh);
   }, []);
@@ -90,8 +113,13 @@ function TimusProblems() {
     });
   };
 
-  const handleSubmit = (problem) => {
+  const handleSubmit = (e, problem) => {
+    e.stopPropagation();
     openSubmissionPage(problem.id, judgeId);
+  };
+
+  const handleRowClick = (problemId) => {
+    navigate(`/timus/${problemId}`);
   };
 
   const visibleProblems = problems.filter(p => {
@@ -109,7 +137,22 @@ function TimusProblems() {
             <p className="timus-judge-notice">
               ℹ️ Set your{' '}
               <a href="/profile" className="timus-link">Timus Judge ID in Profile</a>
-              {' '}to pre-fill the submission form.
+              {' '}to auto-sync solved problems and pre-fill submissions.
+            </p>
+          )}
+          {judgeId && syncStatus === 'syncing' && (
+            <p className="timus-sync-notice timus-sync-notice--loading">
+              ⏳ Syncing solved problems from your Timus profile…
+            </p>
+          )}
+          {judgeId && syncStatus === 'synced' && (
+            <p className="timus-sync-notice timus-sync-notice--ok">
+              ✓ Solved problems synced from Timus (Judge ID: {judgeId})
+            </p>
+          )}
+          {judgeId && syncStatus === 'unavailable' && (
+            <p className="timus-sync-notice timus-sync-notice--warn">
+              ⚠️ Auto-sync unavailable (CORS). Use the ✓/○ buttons to track solved problems manually.
             </p>
           )}
         </div>
@@ -182,18 +225,17 @@ function TimusProblems() {
                 return (
                   <div
                     key={problem.id}
-                    className={`timus-row${isSolved ? ' timus-row--solved' : ''}`}
+                    className={`timus-row timus-row--clickable${isSolved ? ' timus-row--solved' : ''}`}
+                    onClick={() => handleRowClick(problem.id)}
+                    role="button"
+                    tabIndex={0}
+                    onKeyDown={e => e.key === 'Enter' && handleRowClick(problem.id)}
                   >
                     <span className="timus-col-id timus-problem-id">{problem.id}</span>
                     <span className="timus-col-title">
-                      <a
-                        href={getProblemUrl(problem.id)}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="timus-problem-link"
-                      >
+                      <span className="timus-problem-link">
                         {problem.title}
-                      </a>
+                      </span>
                       <span className="timus-category-badge">{problem.category}</span>
                     </span>
                     <span className="timus-col-difficulty">
@@ -210,14 +252,14 @@ function TimusProblems() {
                     <span className="timus-col-actions timus-actions">
                       <button
                         className={`timus-btn timus-btn--solved${isSolved ? ' marked' : ''}`}
-                        onClick={() => toggleSolved(problem.id)}
+                        onClick={e => { e.stopPropagation(); toggleSolved(problem.id); }}
                         title={isSolved ? 'Mark as unsolved' : 'Mark as solved'}
                       >
                         {isSolved ? '✓' : '○'}
                       </button>
                       <button
                         className="timus-btn timus-btn--submit"
-                        onClick={() => handleSubmit(problem)}
+                        onClick={e => handleSubmit(e, problem)}
                         title="Submit solution on Timus"
                       >
                         Submit
