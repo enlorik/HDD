@@ -55,7 +55,7 @@ function ProblemDetail() {
   const [error, setError] = useState(null);
   const [judgeId] = useState(() => loadJudgeId());
   const [solvedIds, setSolvedIds] = useState(() => loadSolvedProblems());
-  const [selectedLanguage, setSelectedLanguage] = useState(TIMUS_LANGUAGES[0].label);
+  const [selectedLanguage, setSelectedLanguage] = useState(TIMUS_LANGUAGES[0].value);
 
   useEffect(() => {
     if (isNaN(problemId)) {
@@ -96,7 +96,7 @@ function ProblemDetail() {
   };
 
   const handleSubmit = () => {
-    openSubmissionPage(problemId, judgeId);
+    openSubmissionPage(problemId, judgeId, selectedLanguage);
   };
 
   return (
@@ -172,7 +172,7 @@ function ProblemDetail() {
                     onChange={e => setSelectedLanguage(e.target.value)}
                   >
                     {TIMUS_LANGUAGES.map(lang => (
-                      <option key={lang.value} value={lang.label}>{lang.label}</option>
+                      <option key={lang.value} value={lang.value}>{lang.label}</option>
                     ))}
                   </select>
                   <p className="pd-field-hint">

@@ -134,14 +134,19 @@ export function getProblemUrl(problemId) {
 /**
  * Get the URL for the Timus submission page, pre-filled with the problem number.
  * If a judgeId is provided it is included so Timus can identify the submitter.
+ * If a language code is provided it is pre-selected on the submission form.
  * @param {number} problemId - Timus problem number
  * @param {string|null} judgeId - User's Timus judge ID (optional)
+ * @param {string|null} language - Timus language code, e.g. '93' for GNU C++17 (optional)
  * @returns {string}
  */
-export function getSubmissionUrl(problemId, judgeId = null) {
+export function getSubmissionUrl(problemId, judgeId = null, language = null) {
   const params = new URLSearchParams({ space: '1', num: String(problemId) });
   if (judgeId) {
     params.set('JudgeID', judgeId);
+  }
+  if (language) {
+    params.set('Language', language);
   }
   return `${TIMUS_BASE_URL}/submit.aspx?${params.toString()}`;
 }
@@ -152,9 +157,10 @@ export function getSubmissionUrl(problemId, judgeId = null) {
  * to the Timus website where they can submit using their account.
  * @param {number} problemId - Timus problem number
  * @param {string|null} judgeId - User's Timus judge ID (optional)
+ * @param {string|null} language - Timus language code (optional)
  */
-export function openSubmissionPage(problemId, judgeId = null) {
-  const url = getSubmissionUrl(problemId, judgeId);
+export function openSubmissionPage(problemId, judgeId = null, language = null) {
+  const url = getSubmissionUrl(problemId, judgeId, language);
   window.open(url, '_blank', 'noopener,noreferrer');
 }
 
