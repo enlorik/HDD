@@ -52,9 +52,14 @@ A React + Vite competitive programming dashboard for tracking Codeforces contest
 
 ```
 HDD/
+├── data/
+│   ├── problems.json            # Tag-based Timus problem metadata (populated by fetch_problems.py)
+│   └── solved_problems.json     # Per-user solved lists keyed by Timus Judge ID
 ├── public/
 │   └── timus-problems.json      # Daily-updated Timus problem list
 ├── scripts/
+│   ├── fetch_problems.py        # Scrapes all 13 Timus tag pages → data/problems.json
+│   ├── update_solved.py         # Fetches solved problems for a user → data/solved_problems.json
 │   └── fetch_timus_problems.py  # Scraper that generates timus-problems.json
 ├── src/
 │   ├── components/
@@ -109,6 +114,57 @@ The Timus problem list (`public/timus-problems.json`) is refreshed daily via a G
 2. Commits and pushes the updated JSON if any problems changed.
 
 The workflow can also be triggered manually from the GitHub Actions UI.
+
+## Tag-Based Problem Tracking
+
+Two scripts let you group Timus problems by topic tag and track per-user solved progress. All data is stored locally in the `data/` directory — no external dependencies required (stdlib only).
+
+### 1. Fetch problems by tag
+
+```bash
+python scripts/fetch_problems.py
+```
+
+Scrapes all 13 tag pages from acm.timus.ru and writes merged problem metadata to `data/problems.json`.
+
+### 2. Update solved problems for a user
+
+```bash
+python scripts/update_solved.py <judge_id>
+```
+
+Replace `<judge_id>` with your numeric Timus Judge ID (visible in your Timus profile URL). The script:
+
+1. Fetches your accepted submissions from Timus.
+2. Updates `data/solved_problems.json` with the solved problem IDs for your judge ID.
+3. Prints a progress table:
+
+```
+Tag                                Solved / Total
+-------------------------------------------------
+Data Structures Problems                5 /     50
+Dynamic Programming Problems           10 /     30
+Graph Theory Problems                   3 /     42
+...
+```
+
+### Supported tags (13)
+
+| Display Name                  | Tag slug      |
+|-------------------------------|---------------|
+| Data Structures Problems      | `structure`   |
+| Dynamic Programming Problems  | `dynprog`     |
+| Game Problems                 | `game`        |
+| Geometry Problems             | `geometry`    |
+| Graph Theory Problems         | `graphs`      |
+| Hardest Problems              | `hardest`     |
+| Mathematical Problems         | `math`        |
+| Number Theory Problems        | `numbers`     |
+| Problems for Beginners        | `beginners`   |
+| Problems on Palindromes       | `palindromes` |
+| String Algorithms Problems    | `string`      |
+| Tricky Problems               | `tricky`      |
+| Unusual Problems              | `unusual`     |
 
 ## Deployment
 
