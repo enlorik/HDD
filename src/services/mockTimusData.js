@@ -9,7 +9,8 @@ export const mockTimusProblems = [
     difficulty: 1,
     solved: 156432,
     category: 'Simulation',
-    link: 'https://acm.timus.ru/problem.aspx?space=1&num=1001'
+    link: 'https://acm.timus.ru/problem.aspx?space=1&num=1001',
+    statement: 'This is a test problem used for verifying that your solution can be submitted and judged correctly.\n\nInput\nThe input contains a single integer N (1 ≤ N ≤ 100).\n\nOutput\nPrint "Hello, World!" N times, each on a separate line.'
   },
   {
     id: 1002,
@@ -17,7 +18,8 @@ export const mockTimusProblems = [
     difficulty: 1,
     solved: 98765,
     category: 'Strings',
-    link: 'https://acm.timus.ru/problem.aspx?space=1&num=1002'
+    link: 'https://acm.timus.ru/problem.aspx?space=1&num=1002',
+    statement: 'You are given a list of phone numbers. Determine whether any number in the list is a prefix of another.\n\nInput\nThe first line contains an integer N (1 ≤ N ≤ 10000). Each of the following N lines contains a phone number — a string of at most 10 digits.\n\nOutput\nPrint "YES" if any number is a prefix of another; otherwise print "NO".'
   },
   {
     id: 1003,
@@ -25,7 +27,8 @@ export const mockTimusProblems = [
     difficulty: 2,
     solved: 72341,
     category: 'Math',
-    link: 'https://acm.timus.ru/problem.aspx?space=1&num=1003'
+    link: 'https://acm.timus.ru/problem.aspx?space=1&num=1003',
+    statement: ''
   },
   {
     id: 1005,
@@ -33,7 +36,8 @@ export const mockTimusProblems = [
     difficulty: 2,
     solved: 61820,
     category: 'Dynamic Programming',
-    link: 'https://acm.timus.ru/problem.aspx?space=1&num=1005'
+    link: 'https://acm.timus.ru/problem.aspx?space=1&num=1005',
+    statement: ''
   },
   {
     id: 1007,
@@ -41,7 +45,8 @@ export const mockTimusProblems = [
     difficulty: 3,
     solved: 45210,
     category: 'Math',
-    link: 'https://acm.timus.ru/problem.aspx?space=1&num=1007'
+    link: 'https://acm.timus.ru/problem.aspx?space=1&num=1007',
+    statement: ''
   },
   {
     id: 1009,
@@ -49,7 +54,8 @@ export const mockTimusProblems = [
     difficulty: 3,
     solved: 52340,
     category: 'Dynamic Programming',
-    link: 'https://acm.timus.ru/problem.aspx?space=1&num=1009'
+    link: 'https://acm.timus.ru/problem.aspx?space=1&num=1009',
+    statement: ''
   },
   {
     id: 1010,
@@ -57,7 +63,8 @@ export const mockTimusProblems = [
     difficulty: 2,
     solved: 58100,
     category: 'Math',
-    link: 'https://acm.timus.ru/problem.aspx?space=1&num=1010'
+    link: 'https://acm.timus.ru/problem.aspx?space=1&num=1010',
+    statement: ''
   },
   {
     id: 1011,
@@ -65,7 +72,8 @@ export const mockTimusProblems = [
     difficulty: 4,
     solved: 12540,
     category: 'Graph Theory',
-    link: 'https://acm.timus.ru/problem.aspx?space=1&num=1011'
+    link: 'https://acm.timus.ru/problem.aspx?space=1&num=1011',
+    statement: ''
   },
   {
     id: 1023,
@@ -73,7 +81,8 @@ export const mockTimusProblems = [
     difficulty: 2,
     solved: 38900,
     category: 'Game Theory',
-    link: 'https://acm.timus.ru/problem.aspx?space=1&num=1023'
+    link: 'https://acm.timus.ru/problem.aspx?space=1&num=1023',
+    statement: ''
   },
   {
     id: 1100,
@@ -81,7 +90,8 @@ export const mockTimusProblems = [
     difficulty: 4,
     solved: 9870,
     category: 'Graph Theory',
-    link: 'https://acm.timus.ru/problem.aspx?space=1&num=1100'
+    link: 'https://acm.timus.ru/problem.aspx?space=1&num=1100',
+    statement: ''
   },
   {
     id: 1101,
@@ -89,7 +99,8 @@ export const mockTimusProblems = [
     difficulty: 2,
     solved: 33210,
     category: 'Dynamic Programming',
-    link: 'https://acm.timus.ru/problem.aspx?space=1&num=1101'
+    link: 'https://acm.timus.ru/problem.aspx?space=1&num=1101',
+    statement: ''
   },
   {
     id: 1102,
@@ -97,7 +108,8 @@ export const mockTimusProblems = [
     difficulty: 1,
     solved: 87654,
     category: 'Strings',
-    link: 'https://acm.timus.ru/problem.aspx?space=1&num=1102'
+    link: 'https://acm.timus.ru/problem.aspx?space=1&num=1102',
+    statement: ''
   },
   {
     id: 1103,
@@ -105,7 +117,8 @@ export const mockTimusProblems = [
     difficulty: 3,
     solved: 21430,
     category: 'Geometry',
-    link: 'https://acm.timus.ru/problem.aspx?space=1&num=1103'
+    link: 'https://acm.timus.ru/problem.aspx?space=1&num=1103',
+    statement: ''
   },
   {
     id: 1104,
@@ -113,7 +126,8 @@ export const mockTimusProblems = [
     difficulty: 2,
     solved: 44320,
     category: 'Dynamic Programming',
-    link: 'https://acm.timus.ru/problem.aspx?space=1&num=1104'
+    link: 'https://acm.timus.ru/problem.aspx?space=1&num=1104',
+    statement: ''
   },
   {
     id: 1105,
@@ -121,7 +135,8 @@ export const mockTimusProblems = [
     difficulty: 3,
     solved: 18920,
     category: 'Graph Theory',
-    link: 'https://acm.timus.ru/problem.aspx?space=1&num=1105'
+    link: 'https://acm.timus.ru/problem.aspx?space=1&num=1105',
+    statement: ''
   },
   {
     id: 1201,
@@ -129,7 +144,8 @@ export const mockTimusProblems = [
     difficulty: 1,
     solved: 115320,
     category: 'Math',
-    link: 'https://acm.timus.ru/problem.aspx?space=1&num=1201'
+    link: 'https://acm.timus.ru/problem.aspx?space=1&num=1201',
+    statement: ''
   },
   {
     id: 1202,
@@ -137,7 +153,8 @@ export const mockTimusProblems = [
     difficulty: 2,
     solved: 39871,
     category: 'Math',
-    link: 'https://acm.timus.ru/problem.aspx?space=1&num=1202'
+    link: 'https://acm.timus.ru/problem.aspx?space=1&num=1202',
+    statement: ''
   },
   {
     id: 1203,
@@ -145,7 +162,8 @@ export const mockTimusProblems = [
     difficulty: 3,
     solved: 22145,
     category: 'Greedy',
-    link: 'https://acm.timus.ru/problem.aspx?space=1&num=1203'
+    link: 'https://acm.timus.ru/problem.aspx?space=1&num=1203',
+    statement: ''
   },
   {
     id: 1204,
@@ -153,7 +171,8 @@ export const mockTimusProblems = [
     difficulty: 3,
     solved: 16780,
     category: 'Data Structures',
-    link: 'https://acm.timus.ru/problem.aspx?space=1&num=1204'
+    link: 'https://acm.timus.ru/problem.aspx?space=1&num=1204',
+    statement: ''
   },
   {
     id: 1205,
@@ -161,7 +180,8 @@ export const mockTimusProblems = [
     difficulty: 4,
     solved: 8923,
     category: 'Graph Theory',
-    link: 'https://acm.timus.ru/problem.aspx?space=1&num=1205'
+    link: 'https://acm.timus.ru/problem.aspx?space=1&num=1205',
+    statement: ''
   },
   {
     id: 1301,
@@ -169,7 +189,8 @@ export const mockTimusProblems = [
     difficulty: 3,
     solved: 17432,
     category: 'Graph Theory',
-    link: 'https://acm.timus.ru/problem.aspx?space=1&num=1301'
+    link: 'https://acm.timus.ru/problem.aspx?space=1&num=1301',
+    statement: ''
   },
   {
     id: 1350,
@@ -177,7 +198,8 @@ export const mockTimusProblems = [
     difficulty: 2,
     solved: 42340,
     category: 'Game Theory',
-    link: 'https://acm.timus.ru/problem.aspx?space=1&num=1350'
+    link: 'https://acm.timus.ru/problem.aspx?space=1&num=1350',
+    statement: ''
   },
   {
     id: 1401,
@@ -185,7 +207,8 @@ export const mockTimusProblems = [
     difficulty: 1,
     solved: 67432,
     category: 'Game Theory',
-    link: 'https://acm.timus.ru/problem.aspx?space=1&num=1401'
+    link: 'https://acm.timus.ru/problem.aspx?space=1&num=1401',
+    statement: ''
   }
 ];
 

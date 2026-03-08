@@ -6,10 +6,18 @@ Fetches the full problem list from https://acm.timus.ru/problemset.aspx,
 extracts problem metadata (ID, title, difficulty, solved count, volume/category),
 and writes the result to public/timus-problems.json.
 
+When run without --no-statements (the default), each problem's individual page is
+also fetched to extract the full plain-text problem statement, which is stored
+under the "statement" key in each problem object.  This allows the front-end to
+render problem statements inline without redirecting to the Timus website.
+
 Run this script from the repository root:
-    python scripts/fetch_timus_problems.py
+    python scripts/fetch_timus_problems.py           # full run with statements
+    python scripts/fetch_timus_problems.py --no-statements   # metadata only (faster)
 """
 
+import argparse
+import html as html_module
 import json
 import re
 import sys
@@ -21,8 +29,11 @@ from urllib.request import Request, urlopen
 from urllib.error import URLError
 
 TIMUS_PROBLEMSET_URL = "https://acm.timus.ru/problemset.aspx?space=1&page=all&locale=en"
+TIMUS_PROBLEM_URL = "https://acm.timus.ru/problem.aspx?space=1&num={num}&locale=en"
 OUTPUT_PATH = Path(__file__).parent.parent / "public" / "timus-problems.json"
 REQUEST_TIMEOUT = 30
+STATEMENT_REQUEST_TIMEOUT = 10
+STATEMENT_RATE_LIMIT = 0.4  # seconds between individual problem fetches
 USER_AGENT = "Mozilla/5.0 (compatible; HDD-Timus-Scraper/1.0)"
 
 VOLUME_SIZE = 100  # Timus volumes group problems in sets of 100 (1001-1100, 1101-1200, …)
@@ -130,10 +141,86 @@ def _bucket_difficulty(raw: float) -> int:
     return 4  # Expert
 
 
-def fetch_html(url: str) -> str:
+class TimusProblemStatementParser(HTMLParser):
+    """
+    Parse a single Timus problem page and extract the problem statement as plain text.
+
+    The statement lives inside the first ``<div class="problem_text">`` element on
+    the page.  All HTML tags within that block are stripped; only visible text
+    content is collected.  Consecutive whitespace is collapsed to produce a clean,
+    readable plain-text result.
+    """
+
+    # Tags whose closing tag signals the end of a logical block (used for spacing)
+    _BLOCK_TAGS = {
+        "p", "div", "br", "h1", "h2", "h3", "h4",
+        "li", "tr", "ul", "ol", "table", "pre", "blockquote", "hr", "dd",
+    }
+
+    def __init__(self):
+        super().__init__()
+        self._in_statement = False
+        self._depth = 0
+        self._parts: list[str] = []
+
+    def handle_starttag(self, tag: str, attrs):
+        if not self._in_statement:
+            attrs_dict = dict(attrs)
+            css = attrs_dict.get("class", "")
+            if tag == "div" and "problem_text" in css:
+                self._in_statement = True
+                self._depth = 1
+        else:
+            if tag == "div":
+                self._depth += 1
+            if tag in self._BLOCK_TAGS:
+                self._parts.append("\n")
+
+    def handle_endtag(self, tag: str):
+        if not self._in_statement:
+            return
+        if tag in self._BLOCK_TAGS:
+            self._parts.append("\n")
+        if tag == "div":
+            self._depth -= 1
+            if self._depth <= 0:
+                self._in_statement = False
+
+    def handle_data(self, data: str):
+        if self._in_statement:
+            self._parts.append(data)
+
+    def handle_entityref(self, name: str):
+        if self._in_statement:
+            self._parts.append(html_module.unescape(f"&{name};"))
+
+    def handle_charref(self, name: str):
+        if self._in_statement:
+            self._parts.append(html_module.unescape(f"&#{name};"))
+
+    def get_statement(self) -> str:
+        """Return the extracted statement as cleaned plain text."""
+        raw = "".join(self._parts)
+        # Collapse runs of whitespace (keep at most two consecutive newlines)
+        lines = [line.strip() for line in raw.splitlines()]
+        # Remove empty lines at the start/end; collapse multiple blank lines to one
+        result_lines: list[str] = []
+        blank_run = 0
+        for line in lines:
+            if line:
+                blank_run = 0
+                result_lines.append(line)
+            else:
+                blank_run += 1
+                if blank_run <= 1 and result_lines:
+                    result_lines.append("")
+        return "\n".join(result_lines).strip()
+
+
+def fetch_html(url: str, timeout: int = REQUEST_TIMEOUT) -> str:
     req = Request(url, headers={"User-Agent": USER_AGENT})
     try:
-        with urlopen(req, timeout=REQUEST_TIMEOUT) as resp:
+        with urlopen(req, timeout=timeout) as resp:
             charset = "utf-8"
             ct = resp.headers.get_content_type()
             if ct:
@@ -146,7 +233,25 @@ def fetch_html(url: str) -> str:
         raise
 
 
-def scrape_problems() -> tuple[list[dict], list[str]]:
+def fetch_problem_statement(problem_id: int) -> str:
+    """
+    Fetch and return the plain-text problem statement for a single Timus problem.
+
+    Returns an empty string if the page cannot be fetched or the statement
+    cannot be located, so the caller can degrade gracefully.
+    """
+    url = TIMUS_PROBLEM_URL.format(num=problem_id)
+    try:
+        html = fetch_html(url, timeout=STATEMENT_REQUEST_TIMEOUT)
+        parser = TimusProblemStatementParser()
+        parser.feed(html)
+        return parser.get_statement()
+    except Exception as exc:
+        print(f"[WARN] Could not fetch statement for problem {problem_id}: {exc}", file=sys.stderr)
+        return ""
+
+
+def scrape_problems(with_statements: bool = True) -> tuple[list[dict], list[str]]:
     print(f"[INFO] Fetching problem list from {TIMUS_PROBLEMSET_URL}")
     html = fetch_html(TIMUS_PROBLEMSET_URL)
 
@@ -164,6 +269,20 @@ def scrape_problems() -> tuple[list[dict], list[str]]:
     )
 
     print(f"[INFO] Scraped {len(problems)} problems across {len(categories)} categories.")
+
+    if with_statements:
+        print(f"[INFO] Fetching problem statements (this may take a while)…")
+        for i, problem in enumerate(problems):
+            if i > 0:
+                time.sleep(STATEMENT_RATE_LIMIT)
+            statement = fetch_problem_statement(problem["id"])
+            problem["statement"] = statement
+            if (i + 1) % 20 == 0 or (i + 1) == len(problems):
+                print(f"[INFO] Fetched statements for {i + 1}/{len(problems)} problems…")
+    else:
+        for problem in problems:
+            problem["statement"] = ""
+
     return problems, categories
 
 
@@ -179,9 +298,17 @@ def write_output(problems: list[dict], categories: list[str]) -> None:
 
 
 def main() -> int:
+    parser = argparse.ArgumentParser(description="Scrape Timus Online Judge problems.")
+    parser.add_argument(
+        "--no-statements",
+        action="store_true",
+        help="Skip fetching individual problem statements (faster, metadata only).",
+    )
+    args = parser.parse_args()
+
     start = time.monotonic()
     try:
-        problems, categories = scrape_problems()
+        problems, categories = scrape_problems(with_statements=not args.no_statements)
         if problems:
             write_output(problems, categories)
         else:

@@ -8,6 +8,49 @@ const TIMUS_PROBLEMS_URL = '/timus-problems.json';
 const TIMUS_BASE_URL = 'https://acm.timus.ru';
 const USE_MOCK_DATA = false; // Set to true to use mock data instead of static JSON
 
+const SOLVED_KEY_PREFIX = 'timus-solved-';
+const SOLVED_KEY_DEFAULT = 'timus-solved-problems';
+
+/**
+ * Return the localStorage key used to persist solved problem IDs for a given
+ * Timus Judge ID.  When no Judge ID is supplied the shared fallback key is
+ * returned so that users who haven't set up a profile still get persistence.
+ *
+ * @param {string|null} judgeId - The user's numeric Timus Judge ID, or null
+ * @returns {string}
+ */
+export function getSolvedStorageKey(judgeId) {
+  return judgeId ? `${SOLVED_KEY_PREFIX}${judgeId}` : SOLVED_KEY_DEFAULT;
+}
+
+/**
+ * Load the list of solved problem IDs from localStorage for the given user.
+ *
+ * @param {string|null} judgeId
+ * @returns {number[]}
+ */
+export function loadSolvedProblems(judgeId = null) {
+  try {
+    return JSON.parse(localStorage.getItem(getSolvedStorageKey(judgeId)) || '[]');
+  } catch {
+    return [];
+  }
+}
+
+/**
+ * Persist the list of solved problem IDs to localStorage for the given user.
+ *
+ * @param {number[]} ids
+ * @param {string|null} judgeId
+ */
+export function saveSolvedProblems(ids, judgeId = null) {
+  try {
+    localStorage.setItem(getSolvedStorageKey(judgeId), JSON.stringify(ids));
+  } catch {
+    console.error('Failed to save solved problems to localStorage');
+  }
+}
+
 /**
  * Languages supported by Timus Online Judge for submission.
  * Each entry has a label shown in the UI and the value passed to the submission URL.

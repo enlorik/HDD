@@ -1,10 +1,15 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import './TimusProblems.css';
-import { fetchTimusProblems, fetchUserSolvedProblems, openSubmissionPage } from '../services/timusService';
+import {
+  fetchTimusProblems,
+  fetchUserSolvedProblems,
+  openSubmissionPage,
+  loadSolvedProblems,
+  saveSolvedProblems,
+} from '../services/timusService';
 
 const STORAGE_KEY = 'hdd-user-profile';
-const SOLVED_KEY = 'timus-solved-problems';
 
 const DIFFICULTY_LABELS = {
   1: 'Easy',
@@ -29,22 +34,6 @@ function loadJudgeId() {
   }
 }
 
-function loadSolvedProblems() {
-  try {
-    return JSON.parse(localStorage.getItem(SOLVED_KEY) || '[]');
-  } catch {
-    return [];
-  }
-}
-
-function saveSolvedProblems(solvedIds) {
-  try {
-    localStorage.setItem(SOLVED_KEY, JSON.stringify(solvedIds));
-  } catch {
-    console.error('Failed to save solved problems to localStorage');
-  }
-}
-
 function TimusProblems() {
   const navigate = useNavigate();
   const [problems, setProblems] = useState([]);
@@ -52,8 +41,8 @@ function TimusProblems() {
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [solvedIds, setSolvedIds] = useState(() => loadSolvedProblems());
   const [judgeId, setJudgeId] = useState(() => loadJudgeId());
+  const [solvedIds, setSolvedIds] = useState(() => loadSolvedProblems(judgeId));
   const [showSolvedOnly, setShowSolvedOnly] = useState(false);
   const [showUnsolvedOnly, setShowUnsolvedOnly] = useState(() => Boolean(loadJudgeId()));
   const [syncStatus, setSyncStatus] = useState(null); // null | 'syncing' | 'synced' | 'unavailable'
@@ -78,6 +67,11 @@ function TimusProblems() {
     loadProblems();
   }, [selectedCategory]);
 
+  // When judgeId changes, load the user-specific solved list from localStorage
+  useEffect(() => {
+    setSolvedIds(loadSolvedProblems(judgeId));
+  }, [judgeId]);
+
   // Auto-sync solved problems from Timus when judgeId is available
   useEffect(() => {
     if (!judgeId) return;
@@ -86,7 +80,7 @@ function TimusProblems() {
       if (ids && ids.size > 0) {
         const newSolved = [...ids];
         setSolvedIds(newSolved);
-        saveSolvedProblems(newSolved);
+        saveSolvedProblems(newSolved, judgeId);
         setSyncStatus('synced');
       } else {
         setSyncStatus('unavailable');
@@ -108,7 +102,7 @@ function TimusProblems() {
   const toggleSolved = (id) => {
     setSolvedIds(prev => {
       const updated = prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id];
-      saveSolvedProblems(updated);
+      saveSolvedProblems(updated, judgeId);
       return updated;
     });
   };

@@ -1,10 +1,16 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import './ProblemDetail.css';
-import { fetchTimusProblems, openSubmissionPage, getProblemUrl, TIMUS_LANGUAGES } from '../services/timusService';
+import {
+  fetchTimusProblems,
+  openSubmissionPage,
+  getProblemUrl,
+  TIMUS_LANGUAGES,
+  loadSolvedProblems,
+  saveSolvedProblems,
+} from '../services/timusService';
 
 const STORAGE_KEY = 'hdd-user-profile';
-const SOLVED_KEY = 'timus-solved-problems';
 
 const DIFFICULTY_LABELS = {
   1: 'Easy',
@@ -29,22 +35,6 @@ function loadJudgeId() {
   }
 }
 
-function loadSolvedProblems() {
-  try {
-    return JSON.parse(localStorage.getItem(SOLVED_KEY) || '[]');
-  } catch {
-    return [];
-  }
-}
-
-function saveSolvedProblems(ids) {
-  try {
-    localStorage.setItem(SOLVED_KEY, JSON.stringify(ids));
-  } catch {
-    console.error('Failed to save solved problems to localStorage');
-  }
-}
-
 function ProblemDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -54,7 +44,7 @@ function ProblemDetail() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [judgeId] = useState(() => loadJudgeId());
-  const [solvedIds, setSolvedIds] = useState(() => loadSolvedProblems());
+  const [solvedIds, setSolvedIds] = useState(() => loadSolvedProblems(judgeId));
   const [selectedLanguage, setSelectedLanguage] = useState(TIMUS_LANGUAGES[0].value);
 
   useEffect(() => {
@@ -90,7 +80,7 @@ function ProblemDetail() {
       const updated = prev.includes(problemId)
         ? prev.filter(x => x !== problemId)
         : [...prev, problemId];
-      saveSolvedProblems(updated);
+      saveSolvedProblems(updated, judgeId);
       return updated;
     });
   };
@@ -131,17 +121,33 @@ function ProblemDetail() {
 
             <div className="pd-statement-section">
               <h2 className="pd-section-heading">Problem Statement</h2>
-              <p className="pd-statement-note">
-                The full problem statement is hosted on the Timus Online Judge website.
-              </p>
-              <a
-                href={getProblemUrl(problem.id)}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="pd-view-btn"
-              >
-                View on Timus ↗
-              </a>
+              {problem.statement ? (
+                <pre className="pd-statement-body">{problem.statement}</pre>
+              ) : (
+                <>
+                  <p className="pd-statement-note">
+                    The full problem statement is hosted on the Timus Online Judge website.
+                  </p>
+                  <a
+                    href={getProblemUrl(problem.id)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="pd-view-btn"
+                  >
+                    View on Timus ↗
+                  </a>
+                </>
+              )}
+              {problem.statement && (
+                <a
+                  href={getProblemUrl(problem.id)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="pd-view-btn pd-view-btn--secondary"
+                >
+                  View on Timus ↗
+                </a>
+              )}
             </div>
 
             <div className="pd-submit-section">
