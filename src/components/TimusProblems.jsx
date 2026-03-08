@@ -152,7 +152,7 @@ function TimusProblems() {
           )}
           {judgeId && syncStatus === 'unavailable' && (
             <p className="timus-sync-notice timus-sync-notice--warn">
-              ⚠️ Auto-sync unavailable (CORS). Use the ✓/○ buttons to track solved problems manually.
+              ⚠️ Could not sync solved problems from Timus. Use the ✓/○ buttons to track manually.
             </p>
           )}
         </div>
