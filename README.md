@@ -2,6 +2,8 @@
 
 A React + Vite competitive programming dashboard for tracking Codeforces contests and Timus Online Judge problems. Features a visual contest timeline, a bounty board of active contests, a full Timus problem browser with solved-status tracking, and a locally-stored user profile.
 
+**Live Deployment:** [https://hdd-production.up.railway.app/](https://hdd-production.up.railway.app/)
+
 ## Features
 
 ### 1. Codeforces Timeline (`/`)
