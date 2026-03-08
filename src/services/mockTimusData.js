@@ -8,7 +8,7 @@ export const mockTimusProblems = [
     title: 'Timus Test',
     difficulty: 1,
     solved: 156432,
-    category: 'Volume 1',
+    category: 'Simulation',
     link: 'https://acm.timus.ru/problem.aspx?space=1&num=1001'
   },
   {
@@ -16,7 +16,7 @@ export const mockTimusProblems = [
     title: 'Phone Numbers',
     difficulty: 1,
     solved: 98765,
-    category: 'Volume 1',
+    category: 'Strings',
     link: 'https://acm.timus.ru/problem.aspx?space=1&num=1002'
   },
   {
@@ -24,7 +24,7 @@ export const mockTimusProblems = [
     title: 'Parity',
     difficulty: 2,
     solved: 72341,
-    category: 'Volume 1',
+    category: 'Math',
     link: 'https://acm.timus.ru/problem.aspx?space=1&num=1003'
   },
   {
@@ -32,7 +32,7 @@ export const mockTimusProblems = [
     title: 'Stone Pile',
     difficulty: 2,
     solved: 61820,
-    category: 'Volume 1',
+    category: 'Dynamic Programming',
     link: 'https://acm.timus.ru/problem.aspx?space=1&num=1005'
   },
   {
@@ -40,7 +40,7 @@ export const mockTimusProblems = [
     title: 'Code Words',
     difficulty: 3,
     solved: 45210,
-    category: 'Volume 1',
+    category: 'Math',
     link: 'https://acm.timus.ru/problem.aspx?space=1&num=1007'
   },
   {
@@ -48,7 +48,7 @@ export const mockTimusProblems = [
     title: 'K-based Numbers',
     difficulty: 3,
     solved: 52340,
-    category: 'Volume 1',
+    category: 'Dynamic Programming',
     link: 'https://acm.timus.ru/problem.aspx?space=1&num=1009'
   },
   {
@@ -56,7 +56,7 @@ export const mockTimusProblems = [
     title: 'Discrete Function',
     difficulty: 2,
     solved: 58100,
-    category: 'Volume 1',
+    category: 'Math',
     link: 'https://acm.timus.ru/problem.aspx?space=1&num=1010'
   },
   {
@@ -64,15 +64,23 @@ export const mockTimusProblems = [
     title: 'Conductors',
     difficulty: 4,
     solved: 12540,
-    category: 'Volume 1',
+    category: 'Graph Theory',
     link: 'https://acm.timus.ru/problem.aspx?space=1&num=1011'
+  },
+  {
+    id: 1023,
+    title: 'Buttons',
+    difficulty: 2,
+    solved: 38900,
+    category: 'Game Theory',
+    link: 'https://acm.timus.ru/problem.aspx?space=1&num=1023'
   },
   {
     id: 1100,
     title: 'Marriage Ceremonies',
     difficulty: 4,
     solved: 9870,
-    category: 'Volume 1',
+    category: 'Graph Theory',
     link: 'https://acm.timus.ru/problem.aspx?space=1&num=1100'
   },
   {
@@ -80,7 +88,7 @@ export const mockTimusProblems = [
     title: 'Robot in the Field',
     difficulty: 2,
     solved: 33210,
-    category: 'Volume 2',
+    category: 'Dynamic Programming',
     link: 'https://acm.timus.ru/problem.aspx?space=1&num=1101'
   },
   {
@@ -88,7 +96,7 @@ export const mockTimusProblems = [
     title: 'Strange Dialog',
     difficulty: 1,
     solved: 87654,
-    category: 'Volume 2',
+    category: 'Strings',
     link: 'https://acm.timus.ru/problem.aspx?space=1&num=1102'
   },
   {
@@ -96,15 +104,15 @@ export const mockTimusProblems = [
     title: 'Pencils and Circles',
     difficulty: 3,
     solved: 21430,
-    category: 'Volume 2',
+    category: 'Geometry',
     link: 'https://acm.timus.ru/problem.aspx?space=1&num=1103'
   },
   {
     id: 1104,
-    title: 'Don\'t Ask Woman Her Age',
+    title: "Don't Ask Woman Her Age",
     difficulty: 2,
     solved: 44320,
-    category: 'Volume 2',
+    category: 'Dynamic Programming',
     link: 'https://acm.timus.ru/problem.aspx?space=1&num=1104'
   },
   {
@@ -112,7 +120,7 @@ export const mockTimusProblems = [
     title: 'Observers and Listeners',
     difficulty: 3,
     solved: 18920,
-    category: 'Volume 2',
+    category: 'Graph Theory',
     link: 'https://acm.timus.ru/problem.aspx?space=1&num=1105'
   },
   {
@@ -120,7 +128,7 @@ export const mockTimusProblems = [
     title: 'Which Day Is It?',
     difficulty: 1,
     solved: 115320,
-    category: 'Volume 3',
+    category: 'Math',
     link: 'https://acm.timus.ru/problem.aspx?space=1&num=1201'
   },
   {
@@ -128,7 +136,7 @@ export const mockTimusProblems = [
     title: 'Double-base Palindromes',
     difficulty: 2,
     solved: 39871,
-    category: 'Volume 3',
+    category: 'Math',
     link: 'https://acm.timus.ru/problem.aspx?space=1&num=1202'
   },
   {
@@ -136,7 +144,7 @@ export const mockTimusProblems = [
     title: 'Scientific Conference',
     difficulty: 3,
     solved: 22145,
-    category: 'Volume 3',
+    category: 'Greedy',
     link: 'https://acm.timus.ru/problem.aspx?space=1&num=1203'
   },
   {
@@ -144,7 +152,7 @@ export const mockTimusProblems = [
     title: 'Bus Stations',
     difficulty: 3,
     solved: 16780,
-    category: 'Volume 3',
+    category: 'Data Structures',
     link: 'https://acm.timus.ru/problem.aspx?space=1&num=1204'
   },
   {
@@ -152,7 +160,7 @@ export const mockTimusProblems = [
     title: 'By the Underground',
     difficulty: 4,
     solved: 8923,
-    category: 'Volume 3',
+    category: 'Graph Theory',
     link: 'https://acm.timus.ru/problem.aspx?space=1&num=1205'
   },
   {
@@ -160,9 +168,36 @@ export const mockTimusProblems = [
     title: 'Cube in Labyrinth',
     difficulty: 3,
     solved: 17432,
-    category: 'Volume 4',
+    category: 'Graph Theory',
     link: 'https://acm.timus.ru/problem.aspx?space=1&num=1301'
+  },
+  {
+    id: 1350,
+    title: 'Nim',
+    difficulty: 2,
+    solved: 42340,
+    category: 'Game Theory',
+    link: 'https://acm.timus.ru/problem.aspx?space=1&num=1350'
+  },
+  {
+    id: 1401,
+    title: 'Gamers',
+    difficulty: 1,
+    solved: 67432,
+    category: 'Game Theory',
+    link: 'https://acm.timus.ru/problem.aspx?space=1&num=1401'
   }
 ];
 
-export const mockTimusCategories = ['Volume 1', 'Volume 2', 'Volume 3', 'Volume 4'];
+export const mockTimusCategories = [
+  'Graph Theory',
+  'Game Theory',
+  'Dynamic Programming',
+  'Math',
+  'Strings',
+  'Greedy',
+  'Geometry',
+  'Data Structures',
+  'Sorting',
+  'Simulation'
+];
