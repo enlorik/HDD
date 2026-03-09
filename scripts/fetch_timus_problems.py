@@ -10,6 +10,7 @@ Run this script from the repository root:
     python scripts/fetch_timus_problems.py
 """
 
+import gzip
 import json
 import re
 import sys
@@ -23,7 +24,7 @@ from urllib.error import URLError
 TIMUS_PROBLEMSET_URL = "https://acm.timus.ru/problemset.aspx?space=1&page=all&locale=en"
 OUTPUT_PATH = Path(__file__).parent.parent / "public" / "timus-problems.json"
 REQUEST_TIMEOUT = 30
-USER_AGENT = "Mozilla/5.0 (compatible; HDD-Timus-Scraper/1.0)"
+USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
 
 VOLUME_SIZE = 100  # Timus volumes group problems in sets of 100 (1001-1100, 1101-1200, …)
 
@@ -35,7 +36,17 @@ def problem_volume(problem_id: int) -> str:
 
 
 class TimusProblemParser(HTMLParser):
-    """Parse the Timus problemset HTML page and extract problem rows."""
+    """Parse the Timus problemset HTML page and extract problem rows.
+
+    Looks for ``<tr class="problem ...">`` rows which is the standard
+    Timus table structure.  Each row has columns:
+      1 – problem number (also parsed from the href link)
+      2 – problem title
+      3 – time limit
+      4 – memory limit
+      5 – accepted/solved count
+      6 – difficulty rating (1-10 Timus scale)
+    """
 
     def __init__(self):
         super().__init__()
@@ -78,24 +89,23 @@ class TimusProblemParser(HTMLParser):
             self._buffer = ""
             self._col_index += 1
 
-            # Column layout (0-indexed) observed on Timus problemset page:
-            # 0: problem number (also parsed from link href)
-            # 1: problem title
-            # 2: time limit
-            # 3: memory limit
-            # 4: accepted count (solutions AC'd)
-            # 5: difficulty rating (1-10 scale on Timus)
+            # Column indices after increment (1-based):
+            # 1: problem number (also parsed from link href)
+            # 2: problem title
+            # 3: time limit
+            # 4: memory limit
+            # 5: accepted count (solutions AC'd)
+            # 6: difficulty rating (1-10 scale on Timus)
             if self._col_index == 2:
                 self._current.setdefault("title", text)
             elif self._col_index == 5:
                 try:
-                    self._current["solved"] = int(text.replace(",", "").replace(" ", ""))
+                    self._current["solved"] = int(_clean_numeric_text(text))
                 except ValueError:
                     self._current["solved"] = 0
             elif self._col_index == 6:
                 try:
                     raw = float(text)
-                    # Timus difficulty is 1-10; we bucket it into 4 levels for the UI
                     self._current["difficulty"] = _bucket_difficulty(raw)
                 except ValueError:
                     self._current["difficulty"] = 1
@@ -119,7 +129,96 @@ class TimusProblemParser(HTMLParser):
             self._buffer += data
 
 
-def _bucket_difficulty(raw: float) -> int:
+class TimusFallbackParser(HTMLParser):
+    """Fallback parser that finds problem links in any ``<tr>`` element.
+
+    Used when the primary ``TimusProblemParser`` returns zero results, which
+    can happen if Timus alters their CSS class names.  This parser scans
+    every table row for an anchor pointing to ``problem.aspx?…num=N`` and
+    then reads the surrounding ``<td>`` cells to extract the title and any
+    numeric fields that look like difficulty or solved-count values.
+    """
+
+    def __init__(self):
+        super().__init__()
+        self.problems: list[dict] = []
+        self._in_row = False
+        self._current: dict = {}
+        self._col_index = 0
+        self._capture = False
+        self._buffer = ""
+
+    def handle_starttag(self, tag, attrs):
+        attrs_dict = dict(attrs)
+
+        if tag == "tr":
+            self._in_row = True
+            self._current = {}
+            self._col_index = 0
+            return
+
+        if self._in_row and tag == "td":
+            self._capture = True
+            self._buffer = ""
+            return
+
+        if self._in_row and tag == "a" and "href" in attrs_dict:
+            href = attrs_dict["href"]
+            if "problem.aspx" in href:
+                m = re.search(r"num=(\d+)", href)
+                if m:
+                    self._current["id"] = int(m.group(1))
+
+    def handle_endtag(self, tag):
+        if not self._in_row:
+            return
+
+        if tag == "td" and self._capture:
+            text = self._buffer.strip()
+            self._capture = False
+            self._buffer = ""
+            self._col_index += 1
+
+            if self._col_index == 2 and "id" in self._current:
+                self._current.setdefault("title", text)
+
+            # Heuristic: pick up any plausible difficulty (1.0-10.0) or
+            # solved count (> 100) from remaining columns.
+            if text:
+                try:
+                    val = float(_clean_numeric_text(text))
+                    if 1.0 <= val <= 10.0 and "." in text:
+                        self._current.setdefault("difficulty_raw", val)
+                    elif val > 100:
+                        self._current.setdefault("solved", int(val))
+                except ValueError:
+                    pass
+
+        if tag == "tr" and self._in_row:
+            self._in_row = False
+            prob = self._current
+            if prob.get("id") and prob.get("title"):
+                pid = prob["id"]
+                self.problems.append({
+                    "id": pid,
+                    "title": prob["title"],
+                    "difficulty": _bucket_difficulty(prob.get("difficulty_raw", 2.0)),
+                    "solved": prob.get("solved", 0),
+                    "category": problem_volume(pid),
+                    "link": f"https://acm.timus.ru/problem.aspx?space=1&num={pid}",
+                })
+
+    def handle_data(self, data):
+        if self._capture:
+            self._buffer += data
+
+
+def _clean_numeric_text(text: str) -> str:
+    """Strip whitespace, commas, and non-breaking spaces from a numeric string."""
+    return text.replace(",", "").replace("\xa0", "").replace(" ", "")
+
+
+
     """Map Timus 1-10 difficulty scale to 4-level UI buckets."""
     if raw <= 3:
         return 1  # Easy
@@ -130,17 +229,42 @@ def _bucket_difficulty(raw: float) -> int:
     return 4  # Expert
 
 
+def _detect_charset(raw_bytes: bytes, http_charset: str | None) -> str:
+    """Return the best charset guess for the given raw HTML bytes.
+
+    Priority:
+    1. Charset declared in HTTP Content-Type header.
+    2. Charset declared in an HTML ``<meta>`` tag (handles windows-1251).
+    3. Fall back to UTF-8.
+    """
+    if http_charset:
+        return http_charset
+    # Scan the first 2 KB for a meta charset declaration
+    snippet = raw_bytes[:2048].decode("ascii", errors="replace")
+    m = re.search(r'charset=["\']?([\w-]+)', snippet, re.IGNORECASE)
+    if m:
+        return m.group(1)
+    return "utf-8"
+
+
 def fetch_html(url: str) -> str:
-    req = Request(url, headers={"User-Agent": USER_AGENT})
+    headers = {
+        "User-Agent": USER_AGENT,
+        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+        "Accept-Language": "en-US,en;q=0.5",
+        "Accept-Encoding": "gzip, deflate",
+    }
+    req = Request(url, headers=headers)
     try:
         with urlopen(req, timeout=REQUEST_TIMEOUT) as resp:
-            charset = "utf-8"
-            ct = resp.headers.get_content_type()
-            if ct:
-                cs = resp.headers.get_param("charset")
-                if cs:
-                    charset = cs
-            return resp.read().decode(charset, errors="replace")
+            raw = resp.read()
+            # Handle gzip-compressed responses
+            content_encoding = resp.headers.get("Content-Encoding", "")
+            if content_encoding == "gzip":
+                raw = gzip.decompress(raw)
+            http_charset = resp.headers.get_param("charset")
+            charset = _detect_charset(raw, http_charset)
+            return raw.decode(charset, errors="replace")
     except URLError as exc:
         print(f"[ERROR] Failed to fetch {url}: {exc}", file=sys.stderr)
         raise
@@ -150,12 +274,24 @@ def scrape_problems() -> tuple[list[dict], list[str]]:
     print(f"[INFO] Fetching problem list from {TIMUS_PROBLEMSET_URL}")
     html = fetch_html(TIMUS_PROBLEMSET_URL)
 
+    if len(html) < 1000:
+        print(f"[WARN] Response suspiciously short ({len(html)} chars) — may be an error page.", file=sys.stderr)
+        print(f"[DEBUG] First 500 chars: {html[:500]!r}", file=sys.stderr)
+
     parser = TimusProblemParser()
     parser.feed(html)
     problems = parser.problems
 
     if not problems:
-        print("[WARN] No problems parsed — the page structure may have changed.", file=sys.stderr)
+        print("[WARN] Primary parser (tr.problem) found 0 problems — trying fallback parser.", file=sys.stderr)
+        print(f"[DEBUG] HTML length: {len(html)}, first 300 chars: {html[:300]!r}", file=sys.stderr)
+        fallback = TimusFallbackParser()
+        fallback.feed(html)
+        problems = fallback.problems
+        if problems:
+            print(f"[INFO] Fallback parser found {len(problems)} problems.")
+        else:
+            print("[WARN] Fallback parser also found 0 problems — the page structure may have changed.", file=sys.stderr)
 
     # Derive sorted unique categories
     categories = sorted(

@@ -76,9 +76,12 @@ export async function fetchTimusProblems(category = null) {
 
 /**
  * Attempt to fetch the set of problem IDs that a user has solved on Timus.
- * Timus does not expose a CORS-friendly JSON API, so this request will typically
- * be blocked by the browser's same-origin policy.  The function returns null
- * when it cannot retrieve the data so the caller can fall back to manual tracking.
+ *
+ * In production (Railway) the request is routed through our server-side proxy
+ * (/api/timus-solved/:judgeId) which avoids the browser Same-Origin Policy.
+ * In development (or if the proxy is unreachable) the function falls back to
+ * a direct cross-origin request, which will typically be blocked by CORS and
+ * return null so the caller can fall back to manual tracking.
  *
  * @param {string} judgeId - The user's numeric Timus Judge ID
  * @returns {Promise<Set<number>|null>} Set of solved problem IDs, or null on failure
@@ -86,9 +89,28 @@ export async function fetchTimusProblems(category = null) {
 export async function fetchUserSolvedProblems(judgeId) {
   if (!judgeId) return null;
 
+  // ------------------------------------------------------------------
+  // 1. Try the server-side proxy (works in production; no CORS issues)
+  // ------------------------------------------------------------------
   try {
-    // Timus author page lists all accepted solutions; we attempt a no-cors fetch
-    // to see if CORS headers permit reading the response.
+    const proxyUrl = `/api/timus-solved/${encodeURIComponent(judgeId)}`;
+    const proxyRes = await fetch(proxyUrl, { signal: AbortSignal.timeout(12000) });
+    if (proxyRes.ok) {
+      const data = await proxyRes.json();
+      const ids = new Set((data.solvedIds || []).map(Number));
+      if (import.meta.env.DEV) {
+        console.log(`[Timus] Proxy: ${ids.size} solved problems for judge ID ${judgeId}`);
+      }
+      return ids.size > 0 ? ids : null;
+    }
+  } catch {
+    // Proxy not available (e.g. local dev with Vite only) — fall through
+  }
+
+  // ------------------------------------------------------------------
+  // 2. Direct cross-origin request (blocked by CORS in most browsers)
+  // ------------------------------------------------------------------
+  try {
     const url = `${TIMUS_BASE_URL}/author.aspx?id=${encodeURIComponent(judgeId)}&space=1&action=getstat`;
     const response = await fetch(url, { signal: AbortSignal.timeout(8000) });
 
@@ -100,7 +122,7 @@ export async function fetchUserSolvedProblems(judgeId) {
     const ids = new Set(matches.map(m => parseInt(m[1], 10)));
 
     if (import.meta.env.DEV) {
-      console.log(`[Timus] Fetched ${ids.size} solved problems for judge ID ${judgeId}`);
+      console.log(`[Timus] Direct: ${ids.size} solved problems for judge ID ${judgeId}`);
     }
 
     return ids.size > 0 ? ids : null;
