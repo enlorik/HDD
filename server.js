@@ -92,7 +92,7 @@ app.get('/api/timus-solved/:judgeId', rateLimit, (req, res) => {
       //   <a href="status.aspx?space=1&num=1293&author=...">1293</a>
       // We extract the `num` parameter value from those links.
       const body = Buffer.concat(chunks).toString('latin1');
-      const matches = [...body.matchAll(/class="accepted"[^>]*>\s*<a[^>]*[?&]num=(\d+)/g)];
+      const matches = [...body.matchAll(/class\s*=\s*(?:"[^"]*\baccepted\b[^"]*"|'[^']*\baccepted\b[^']*|[^\s>]*\baccepted\b[^\s>]*)[^>]*>\s*<a[^>]*[?&]num=(\d+)/g)];
       const solvedIds = [...new Set(matches.map((m) => parseInt(m[1], 10)))];
       res.json({ judgeId, solvedIds });
     });
