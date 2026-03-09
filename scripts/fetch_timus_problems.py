@@ -182,6 +182,10 @@ def scrape_problem(num: int) -> dict | None:
         "tags": parser.tags,
         # category = first real tag for UI backward-compat (filter dropdown)
         "category": parser.tags[0] if parser.tags else "Uncategorized",
+        # Keep JSON schema backward-compatible for UI that expects these fields.
+        # Use attributes from the parser if they exist; otherwise, fall back to 0.
+        "difficulty": getattr(parser, "difficulty", 0),
+        "solved": getattr(parser, "solved", 0),
     }
 
 
