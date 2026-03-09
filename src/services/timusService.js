@@ -2,11 +2,8 @@
  * Service for fetching Timus Online Judge problems and handling submissions
  */
 
-import { mockTimusProblems, mockTimusCategories } from './mockTimusData';
-
 const TIMUS_PROBLEMS_URL = '/timus-problems.json';
 const TIMUS_BASE_URL = 'https://acm.timus.ru';
-const USE_MOCK_DATA = false; // Set to true to use mock data instead of static JSON
 
 /**
  * Languages supported by Timus Online Judge for submission.
@@ -27,22 +24,11 @@ export const TIMUS_LANGUAGES = [
 ];
 
 /**
- * Fetch Timus problems, optionally filtered by category, sorted by difficulty (easiest first)
- * @param {string|null} category - Category to filter by, or null for all categories
+ * Fetch Timus problems, optionally filtered by category/tag, sorted by difficulty (easiest first)
+ * @param {string|null} category - Tag/category to filter by, or null for all
  * @returns {Promise<{ problems: Array, categories: Array }>}
  */
 export async function fetchTimusProblems(category = null) {
-  if (USE_MOCK_DATA) {
-    console.log('Using mock Timus data');
-    const problems = category
-      ? mockTimusProblems.filter(p => p.category === category)
-      : mockTimusProblems;
-    return Promise.resolve({
-      problems: sortByDifficulty(problems),
-      categories: mockTimusCategories
-    });
-  }
-
   try {
     const response = await fetch(TIMUS_PROBLEMS_URL);
 
@@ -54,7 +40,14 @@ export async function fetchTimusProblems(category = null) {
     const allProblems = data.problems || [];
     const categories = data.categories || [];
 
-    const filtered = category ? allProblems.filter(p => p.category === category) : allProblems;
+    const filtered = category
+      ? allProblems.filter(p =>
+          // New data format uses a `tags` array; older cached entries fall back
+          // to the `category` string.  The fallback can be removed once the
+          // scraper has refreshed all cached entries with the new format.
+          Array.isArray(p.tags) ? p.tags.includes(category) : p.category === category
+        )
+      : allProblems;
 
     if (import.meta.env.DEV) {
       console.log(`[Timus] Loaded ${filtered.length} problems (category: ${category || 'all'})`);
@@ -63,13 +56,6 @@ export async function fetchTimusProblems(category = null) {
     return { problems: sortByDifficulty(filtered), categories };
   } catch (error) {
     console.error('Error fetching Timus problems:', error);
-    if (import.meta.env.DEV) {
-      console.log('Falling back to mock Timus data (DEV mode)');
-      const problems = category
-        ? mockTimusProblems.filter(p => p.category === category)
-        : mockTimusProblems;
-      return { problems: sortByDifficulty(problems), categories: mockTimusCategories };
-    }
     throw error;
   }
 }

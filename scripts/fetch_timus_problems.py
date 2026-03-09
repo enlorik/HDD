@@ -2,9 +2,13 @@
 """
 Scraper for Timus Online Judge problems.
 
-Fetches the full problem list from https://acm.timus.ru/problemset.aspx,
-extracts problem metadata (ID, title, difficulty, solved count, volume/category),
-and writes the result to public/timus-problems.json.
+Iterates problem numbers 1000–2227, fetches each individual problem page,
+extracts the problem ID, title, URL, and real tags (from tag anchor links on
+the page), then writes the result to public/timus-problems.json.
+
+Caching: existing entries in timus-problems.json are NOT re-fetched on each
+run; only problems missing from the cache are scraped.  This keeps the daily
+CI run fast once the initial population is complete.
 
 Run this script from the repository root:
     python scripts/fetch_timus_problems.py
@@ -21,212 +25,80 @@ from pathlib import Path
 from urllib.request import Request, urlopen
 from urllib.error import URLError
 
-TIMUS_PROBLEMSET_URL = "https://acm.timus.ru/problemset.aspx?space=1&page=all&locale=en"
+PROBLEM_URL_TEMPLATE = "https://acm.timus.ru/problem.aspx?space=1&num={num}&locale=en"
 OUTPUT_PATH = Path(__file__).parent.parent / "public" / "timus-problems.json"
 REQUEST_TIMEOUT = 30
-USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+REQUEST_DELAY = 0.5  # seconds between requests to be polite to the server
+USER_AGENT = (
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+    "AppleWebKit/537.36 (KHTML, like Gecko) "
+    "Chrome/120.0.0.0 Safari/537.36"
+)
 
-VOLUME_SIZE = 100  # Timus volumes group problems in sets of 100 (1001-1100, 1101-1200, …)
+# Range of Timus problem numbers to include (inclusive on both ends)
+PROBLEM_RANGE = range(1000, 2228)
 
 
-def problem_volume(problem_id: int) -> str:
-    """Return the volume name for a given Timus problem ID."""
-    volume_num = (problem_id - 1001) // VOLUME_SIZE + 1
-    return f"Volume {volume_num}"
+class ProblemPageParser(HTMLParser):
+    """Parse a single Timus problem page to extract the title and tags.
 
+    Tags are found on anchor elements whose href matches::
 
-class TimusProblemParser(HTMLParser):
-    """Parse the Timus problemset HTML page and extract problem rows.
+        problemset.aspx?space=1&tag=<name>
 
-    Looks for ``<tr class="problem ...">`` rows which is the standard
-    Timus table structure.  Each row has columns:
-      1 – problem number (also parsed from the href link)
-      2 – problem title
-      3 – time limit
-      4 – memory limit
-      5 – accepted/solved count
-      6 – difficulty rating (1-10 Timus scale)
+    The problem title is read from the first ``<h2 class="problem_title">``
+    element (or a ``<h2>`` element containing a ``<a>`` with ``num=N`` in its
+    href as a fallback), after stripping the leading "NNNN. " prefix.
     """
 
     def __init__(self):
         super().__init__()
-        self.problems: list[dict] = []
-        self._in_prob_row = False
-        self._current = {}
-        self._col_index = 0
-        self._capture = False
+        self.title: str = ""
+        self.tags: list[str] = []
+        self._in_title = False
+        self._in_tag_link = False
         self._buffer = ""
 
     def handle_starttag(self, tag, attrs):
         attrs_dict = dict(attrs)
         css = attrs_dict.get("class", "")
 
-        if tag == "tr" and "problem" in css:
-            self._in_prob_row = True
-            self._current = {}
-            self._col_index = 0
-            return
-
-        if self._in_prob_row and tag == "td":
-            self._capture = True
+        # Detect the problem title heading: <h2 class="problem_title">
+        if tag == "h2" and "problem_title" in css:
+            self._in_title = True
             self._buffer = ""
             return
 
-        # Grab the problem-detail href to extract the numeric ID
-        if self._in_prob_row and tag == "a" and "href" in attrs_dict:
+        # Detect tag links: <a href="problemset.aspx?space=1&tag=...">
+        if tag == "a" and "href" in attrs_dict:
             href = attrs_dict["href"]
-            m = re.search(r"num=(\d+)", href)
-            if m:
-                self._current["id"] = int(m.group(1))
+            if "problemset.aspx" in href and "tag=" in href:
+                self._in_tag_link = True
+                self._buffer = ""
 
     def handle_endtag(self, tag):
-        if not self._in_prob_row:
+        if tag == "h2" and self._in_title:
+            self._in_title = False
+            raw = self._buffer.strip()
+            # Strip the leading problem-number prefix "NNNN. "
+            m = re.match(r"^\d+\.\s+(.+)$", raw, re.DOTALL)
+            self.title = m.group(1).strip() if m else raw
+            self._buffer = ""
             return
 
-        if tag == "td" and self._capture:
-            text = self._buffer.strip()
-            self._capture = False
+        if tag == "a" and self._in_tag_link:
+            self._in_tag_link = False
+            # Timus tag labels are already lowercase (e.g. "data structures",
+            # "dynamic programming").  Normalising to lowercase ensures
+            # consistent deduplication even if the site capitalisation changes.
+            tag_text = self._buffer.strip().lower()
+            if tag_text and tag_text not in self.tags:
+                self.tags.append(tag_text)
             self._buffer = ""
-            self._col_index += 1
-
-            # Column indices after increment (1-based):
-            # 1: problem number (also parsed from link href)
-            # 2: problem title
-            # 3: time limit
-            # 4: memory limit
-            # 5: accepted count (solutions AC'd)
-            # 6: difficulty rating (1-10 scale on Timus)
-            if self._col_index == 2:
-                self._current.setdefault("title", text)
-            elif self._col_index == 5:
-                try:
-                    self._current["solved"] = int(_clean_numeric_text(text))
-                except ValueError:
-                    self._current["solved"] = 0
-            elif self._col_index == 6:
-                try:
-                    raw = float(text)
-                    self._current["difficulty"] = _bucket_difficulty(raw)
-                except ValueError:
-                    self._current["difficulty"] = 1
-
-        if tag == "tr" and self._in_prob_row:
-            self._in_prob_row = False
-            prob = self._current
-            if prob.get("id") and prob.get("title"):
-                pid = prob["id"]
-                self.problems.append({
-                    "id": pid,
-                    "title": prob.get("title", ""),
-                    "difficulty": prob.get("difficulty", 1),
-                    "solved": prob.get("solved", 0),
-                    "category": problem_volume(pid),
-                    "link": f"https://acm.timus.ru/problem.aspx?space=1&num={pid}",
-                })
 
     def handle_data(self, data):
-        if self._capture:
+        if self._in_title or self._in_tag_link:
             self._buffer += data
-
-
-class TimusFallbackParser(HTMLParser):
-    """Fallback parser that finds problem links in any ``<tr>`` element.
-
-    Used when the primary ``TimusProblemParser`` returns zero results, which
-    can happen if Timus alters their CSS class names.  This parser scans
-    every table row for an anchor pointing to ``problem.aspx?…num=N`` and
-    then reads the surrounding ``<td>`` cells to extract the title and any
-    numeric fields that look like difficulty or solved-count values.
-    """
-
-    def __init__(self):
-        super().__init__()
-        self.problems: list[dict] = []
-        self._in_row = False
-        self._current: dict = {}
-        self._col_index = 0
-        self._capture = False
-        self._buffer = ""
-
-    def handle_starttag(self, tag, attrs):
-        attrs_dict = dict(attrs)
-
-        if tag == "tr":
-            self._in_row = True
-            self._current = {}
-            self._col_index = 0
-            return
-
-        if self._in_row and tag == "td":
-            self._capture = True
-            self._buffer = ""
-            return
-
-        if self._in_row and tag == "a" and "href" in attrs_dict:
-            href = attrs_dict["href"]
-            if "problem.aspx" in href:
-                m = re.search(r"num=(\d+)", href)
-                if m:
-                    self._current["id"] = int(m.group(1))
-
-    def handle_endtag(self, tag):
-        if not self._in_row:
-            return
-
-        if tag == "td" and self._capture:
-            text = self._buffer.strip()
-            self._capture = False
-            self._buffer = ""
-            self._col_index += 1
-
-            if self._col_index == 2 and "id" in self._current:
-                self._current.setdefault("title", text)
-
-            # Heuristic: pick up any plausible difficulty (1.0-10.0) or
-            # solved count (> 100) from remaining columns.
-            if text:
-                try:
-                    val = float(_clean_numeric_text(text))
-                    if 1.0 <= val <= 10.0 and "." in text:
-                        self._current.setdefault("difficulty_raw", val)
-                    elif val > 100:
-                        self._current.setdefault("solved", int(val))
-                except ValueError:
-                    pass
-
-        if tag == "tr" and self._in_row:
-            self._in_row = False
-            prob = self._current
-            if prob.get("id") and prob.get("title"):
-                pid = prob["id"]
-                self.problems.append({
-                    "id": pid,
-                    "title": prob["title"],
-                    "difficulty": _bucket_difficulty(prob.get("difficulty_raw", 2.0)),
-                    "solved": prob.get("solved", 0),
-                    "category": problem_volume(pid),
-                    "link": f"https://acm.timus.ru/problem.aspx?space=1&num={pid}",
-                })
-
-    def handle_data(self, data):
-        if self._capture:
-            self._buffer += data
-
-
-def _clean_numeric_text(text: str) -> str:
-    """Strip whitespace, commas, and non-breaking spaces from a numeric string."""
-    return text.replace(",", "").replace("\xa0", "").replace(" ", "")
-
-
-
-    """Map Timus 1-10 difficulty scale to 4-level UI buckets."""
-    if raw <= 3:
-        return 1  # Easy
-    if raw <= 5:
-        return 2  # Medium
-    if raw <= 7:
-        return 3  # Hard
-    return 4  # Expert
 
 
 def _detect_charset(raw_bytes: bytes, http_charset: str | None) -> str:
@@ -270,40 +142,64 @@ def fetch_html(url: str) -> str:
         raise
 
 
-def scrape_problems() -> tuple[list[dict], list[str]]:
-    print(f"[INFO] Fetching problem list from {TIMUS_PROBLEMSET_URL}")
-    html = fetch_html(TIMUS_PROBLEMSET_URL)
+def load_cached_problems() -> dict[int, dict]:
+    """Load existing problems from the output JSON file, keyed by problem ID."""
+    if not OUTPUT_PATH.exists():
+        return {}
+    try:
+        data = json.loads(OUTPUT_PATH.read_text(encoding="utf-8"))
+        return {p["id"]: p for p in data.get("problems", []) if "id" in p}
+    except Exception as exc:
+        print(f"[WARN] Could not read cache from {OUTPUT_PATH}: {exc}", file=sys.stderr)
+        return {}
 
-    if len(html) < 1000:
-        print(f"[WARN] Response suspiciously short ({len(html)} chars) — may be an error page.", file=sys.stderr)
-        print(f"[DEBUG] First 500 chars: {html[:500]!r}", file=sys.stderr)
 
-    parser = TimusProblemParser()
+def scrape_problem(num: int) -> dict | None:
+    """Fetch and parse a single Timus problem page.
+
+    Returns a problem dict with keys ``id``, ``title``, ``url``, ``tags``,
+    and ``category`` (the first tag, or ``"Uncategorized"`` if the page has no
+    tags).  Returns ``None`` if the problem does not exist or the page cannot
+    be parsed.
+    """
+    url = PROBLEM_URL_TEMPLATE.format(num=num)
+    try:
+        html = fetch_html(url)
+    except Exception:
+        return None
+
+    parser = ProblemPageParser()
     parser.feed(html)
-    problems = parser.problems
 
-    if not problems:
-        print("[WARN] Primary parser (tr.problem) found 0 problems — trying fallback parser.", file=sys.stderr)
-        print(f"[DEBUG] HTML length: {len(html)}, first 300 chars: {html[:300]!r}", file=sys.stderr)
-        fallback = TimusFallbackParser()
-        fallback.feed(html)
-        problems = fallback.problems
-        if problems:
-            print(f"[INFO] Fallback parser found {len(problems)} problems.")
-        else:
-            print("[WARN] Fallback parser also found 0 problems — the page structure may have changed.", file=sys.stderr)
+    if not parser.title:
+        # Problem doesn't exist or has an unexpected page structure
+        return None
 
-    # Derive sorted unique categories
+    return {
+        "id": num,
+        "title": parser.title,
+        "url": url,
+        "tags": parser.tags,
+        # category = first real tag for UI backward-compat (filter dropdown)
+        "category": parser.tags[0] if parser.tags else "Uncategorized",
+        # Keep JSON schema backward-compatible for UI that expects these fields.
+        # Use attributes from the parser if they exist; otherwise, fall back to 0.
+        "difficulty": getattr(parser, "difficulty", 0),
+        "solved": getattr(parser, "solved", 0),
+    }
+
+
+def write_output(problems: list[dict]) -> None:
+    # Derive the categories list from the union of all tags across all problems.
+    # If a problem has no tags (missing or empty list), fall back to its category.
     categories = sorted(
-        set(p["category"] for p in problems),
-        key=lambda v: int(v.split()[-1]) if v.split()[-1].isdigit() else 0,
+        {
+            tag
+            for p in problems
+            for tag in (p.get("tags") or [p.get("category", "")])
+            if tag
+        }
     )
-
-    print(f"[INFO] Scraped {len(problems)} problems across {len(categories)} categories.")
-    return problems, categories
-
-
-def write_output(problems: list[dict], categories: list[str]) -> None:
     output = {
         "lastUpdated": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
         "categories": categories,
@@ -316,15 +212,47 @@ def write_output(problems: list[dict], categories: list[str]) -> None:
 
 def main() -> int:
     start = time.monotonic()
-    try:
-        problems, categories = scrape_problems()
-        if problems:
-            write_output(problems, categories)
+
+    cached = load_cached_problems()
+    print(f"[INFO] Loaded {len(cached)} problems from cache.")
+
+    to_fetch = [num for num in PROBLEM_RANGE if num not in cached]
+    print(f"[INFO] Need to fetch {len(to_fetch)} missing problems.")
+
+    if not to_fetch:
+        print("[INFO] All problems are cached; nothing to fetch.")
+        # Re-write the output so that the categories list stays up to date
+        write_output(sorted(cached.values(), key=lambda p: p["id"]))
+        elapsed = time.monotonic() - start
+        print(f"[INFO] Done in {elapsed:.1f}s.")
+        return 0
+
+    new_problems: list[dict] = []
+    for i, num in enumerate(to_fetch, 1):
+        print(f"[INFO] [{i}/{len(to_fetch)}] Fetching problem {num}…")
+        problem = scrape_problem(num)
+        if problem:
+            new_problems.append(problem)
         else:
-            print("[ERROR] No problems scraped — output not updated.", file=sys.stderr)
-            return 1
-    except Exception as exc:
-        print(f"[ERROR] Scraping failed: {exc}", file=sys.stderr)
+            print(f"[WARN] Problem {num} not found or could not be parsed.", file=sys.stderr)
+        if i < len(to_fetch):
+            time.sleep(REQUEST_DELAY)
+
+    all_problems = sorted(
+        list(cached.values()) + new_problems,
+        key=lambda p: p["id"],
+    )
+
+    print(
+        f"[INFO] Total problems: {len(all_problems)} "
+        f"({len(new_problems)} newly fetched, "
+        f"{len(all_problems) - len(new_problems)} from cache)."
+    )
+
+    if all_problems:
+        write_output(all_problems)
+    else:
+        print("[ERROR] No problems available — output not updated.", file=sys.stderr)
         return 1
 
     elapsed = time.monotonic() - start
