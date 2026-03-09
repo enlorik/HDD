@@ -186,9 +186,15 @@ def scrape_problem(num: int) -> dict | None:
 
 
 def write_output(problems: list[dict]) -> None:
-    # Derive the categories list from the union of all tags across all problems
+    # Derive the categories list from the union of all tags across all problems.
+    # If a problem has no tags (missing or empty list), fall back to its category.
     categories = sorted(
-        {tag for p in problems for tag in p.get("tags", [p.get("category", "")])}
+        {
+            tag
+            for p in problems
+            for tag in (p.get("tags") or [p.get("category", "")])
+            if tag
+        }
     )
     output = {
         "lastUpdated": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
