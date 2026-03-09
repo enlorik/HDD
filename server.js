@@ -87,10 +87,12 @@ app.get('/api/timus-solved/:judgeId', rateLimit, (req, res) => {
     const chunks = [];
     timusRes.on('data', (chunk) => { chunks.push(chunk); });
     timusRes.on('end', () => {
-      // Problem IDs are ASCII digits — safe to search in a latin1 string
-      // regardless of the page's actual charset (windows-1251 or utf-8).
+      // Solved problem IDs are extracted from <td class="accepted"> cells on
+      // the author stats page.  Each accepted cell contains a link of the form:
+      //   <a href="status.aspx?space=1&num=1293&author=...">1293</a>
+      // We extract the `num` parameter value from those links.
       const body = Buffer.concat(chunks).toString('latin1');
-      const matches = [...body.matchAll(/problem\.aspx\?space=1&num=(\d+)/g)];
+      const matches = [...body.matchAll(/class="accepted"[^>]*>\s*<a[^>]*[?&]num=(\d+)/g)];
       const solvedIds = [...new Set(matches.map((m) => parseInt(m[1], 10)))];
       res.json({ judgeId, solvedIds });
     });
