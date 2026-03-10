@@ -113,7 +113,7 @@ app.get('/api/timus-solved/:judgeId', rateLimit, (req, res) => {
 // SPA fallback – serve pre-loaded index.html for all unmatched routes so
 // that client-side routing (react-router-dom) works on hard refresh / URL.
 // ---------------------------------------------------------------------------
-app.get('*', (_req, res) => {
+app.get('/*', (_req, res) => {
   res.setHeader('Content-Type', 'text/html; charset=utf-8');
   res.send(INDEX_HTML);
 });
