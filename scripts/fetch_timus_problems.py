@@ -59,7 +59,9 @@ OUTPUT_PATH = Path(__file__).parent.parent / "public" / "timus-problems.json"
 REQUEST_TIMEOUT = 30
 REQUEST_DELAY = 1.0  # seconds between requests – be polite
 MAX_RETRIES = 3
+MAX_RETRY_SLEEP = 10  # cap for exponential backoff
 MAX_PAGINATED_PAGES = 20  # safety cap when paginating
+DEFAULT_CATEGORY = "Uncategorized"
 
 USER_AGENT = (
     "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
@@ -179,7 +181,7 @@ class ProblemsetParser(HTMLParser):
                 "solved": solved,
                 "difficulty": difficulty,
                 "tags": [],
-                "category": "Uncategorized",
+                "category": DEFAULT_CATEGORY,
             }
         )
 
@@ -283,7 +285,7 @@ def fetch_html(url: str, *, retries: int = MAX_RETRIES) -> str:
                 file=sys.stderr,
             )
         if attempt < retries:
-            time.sleep(2 ** attempt)
+            time.sleep(min(2 ** attempt, MAX_RETRY_SLEEP))
 
     raise last_exc or RuntimeError(f"Failed to fetch {url}")
 
@@ -356,7 +358,12 @@ def scrape_problemset() -> list[dict]:
 
 
 def scrape_tags(num: int) -> list[str]:
-    """Fetch tags for problem *num* from its individual page."""
+    """Fetch tags for problem *num* from its individual page.
+
+    Uses a single retry attempt (rather than MAX_RETRIES) because tags are
+    fetched in bulk and failures are non-critical — missing tags will be
+    retried on the next CI run.
+    """
     url = PROBLEM_URL_TEMPLATE.format(num=num)
     try:
         html = fetch_html(url, retries=1)
@@ -394,7 +401,7 @@ def write_output(problems: list[dict]) -> None:
             tag
             for p in problems
             for tag in (p.get("tags") or [p.get("category", "")])
-            if tag and tag != "Uncategorized"
+            if tag and tag != DEFAULT_CATEGORY
         }
     )
     output = {
@@ -435,7 +442,7 @@ def main() -> int:
         merged[pid] = {
             **p,
             "tags": tags,
-            "category": tags[0] if tags else "Uncategorized",
+            "category": tags[0] if tags else DEFAULT_CATEGORY,
         }
 
     # Also keep any cached problems that weren't in the fresh scrape
