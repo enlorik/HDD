@@ -42,10 +42,11 @@ export async function fetchTimusProblems(category = null) {
 
     const filtered = category
       ? allProblems.filter(p =>
-          // New data format uses a `tags` array; older cached entries fall back
-          // to the `category` string.  The fallback can be removed once the
-          // scraper has refreshed all cached entries with the new format.
-          Array.isArray(p.tags) ? p.tags.includes(category) : p.category === category
+          // A non-empty tags array takes priority; fall back to the category
+          // string when tags is absent or empty (e.g. volume-based scrape).
+          Array.isArray(p.tags) && p.tags.length > 0
+            ? p.tags.includes(category)
+            : p.category === category
         )
       : allProblems;
 
