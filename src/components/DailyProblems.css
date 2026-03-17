@@ -1,0 +1,212 @@
+.daily-container {
+  min-height: 100vh;
+  background-color: #111;
+  color: #e0e0e0;
+  padding: 2rem;
+}
+
+.daily-content {
+  max-width: 1100px;
+  margin: 0 auto;
+}
+
+.daily-header {
+  margin-bottom: 1.75rem;
+}
+
+.daily-title {
+  font-size: 2rem;
+  font-weight: 700;
+  color: #ffffff;
+  margin-bottom: 0.5rem;
+}
+
+.daily-date {
+  font-size: 0.9rem;
+  color: #888888;
+  margin-bottom: 0.75rem;
+}
+
+.daily-notice {
+  font-size: 0.9rem;
+  color: #888888;
+  background-color: #1a1a1a;
+  border: 1px solid #3a3a3a;
+  border-radius: 8px;
+  padding: 0.6rem 1rem;
+  display: inline-block;
+  margin-bottom: 0.75rem;
+}
+
+.daily-notice a {
+  color: #4a9eff;
+  text-decoration: none;
+}
+
+.daily-notice a:hover {
+  text-decoration: underline;
+}
+
+.daily-refresh-btn {
+  background-color: #1a1a1a;
+  border: 1px solid #3a3a3a;
+  border-radius: 8px;
+  color: #e0e0e0;
+  padding: 0.5rem 1.1rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: border-color 0.2s, color 0.2s;
+}
+
+.daily-refresh-btn:hover {
+  border-color: #f4ff3a;
+  color: #f4ff3a;
+}
+
+.daily-refresh-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Loading */
+.daily-loading {
+  text-align: center;
+  padding: 4rem 2rem;
+  color: #666666;
+  font-size: 1.05rem;
+}
+
+/* Card grid */
+.daily-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1.25rem;
+}
+
+/* Problem card */
+.daily-card {
+  background-color: #1a1a1a;
+  border: 1px solid #3a3a3a;
+  border-radius: 12px;
+  padding: 1.4rem 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  transition: border-color 0.2s;
+}
+
+.daily-card:hover {
+  border-color: #4a9eff;
+}
+
+.daily-card-tag {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #f4ff3a;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.daily-card-name {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #ffffff;
+  line-height: 1.4;
+}
+
+.daily-card-meta {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+}
+
+.daily-rating-badge {
+  font-size: 0.82rem;
+  font-weight: 700;
+  padding: 2px 9px;
+  border-radius: 10px;
+}
+
+.daily-rating-badge--green {
+  background-color: rgba(76, 175, 80, 0.15);
+  color: #4caf50;
+}
+
+.daily-rating-badge--blue {
+  background-color: rgba(74, 158, 255, 0.15);
+  color: #4a9eff;
+}
+
+.daily-rating-badge--orange {
+  background-color: rgba(255, 152, 0, 0.15);
+  color: #ff9800;
+}
+
+.daily-rating-badge--red {
+  background-color: rgba(244, 67, 54, 0.15);
+  color: #f44336;
+}
+
+.daily-problem-id {
+  font-size: 0.82rem;
+  color: #888888;
+  font-family: monospace;
+}
+
+.daily-card-actions {
+  margin-top: auto;
+}
+
+.daily-solve-btn {
+  background-color: #f4ff3a;
+  color: #0a0a0a;
+  border: none;
+  border-radius: 7px;
+  padding: 0.5rem 1.1rem;
+  font-size: 0.88rem;
+  font-weight: 700;
+  cursor: pointer;
+  text-decoration: none;
+  display: inline-block;
+  transition: background-color 0.2s, box-shadow 0.2s;
+}
+
+.daily-solve-btn:hover {
+  background-color: #e8f230;
+  box-shadow: 0 0 10px rgba(244, 255, 58, 0.3);
+}
+
+/* Empty card state */
+.daily-card--empty {
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+}
+
+.daily-card-empty-msg {
+  color: #555555;
+  font-size: 0.9rem;
+}
+
+/* Responsive */
+@media (max-width: 900px) {
+  .daily-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 560px) {
+  .daily-container {
+    padding: 1rem;
+  }
+
+  .daily-title {
+    font-size: 1.5rem;
+  }
+
+  .daily-grid {
+    grid-template-columns: 1fr;
+  }
+}

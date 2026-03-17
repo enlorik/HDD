@@ -2,9 +2,8 @@
  * Production server for Railway deployment.
  *
  * Serves the built Vite SPA from the `dist` directory and provides a
- * server-side proxy endpoint for fetching a user's Timus solved-problem
- * list.  The proxy avoids the browser CORS restriction that prevents the
- * SPA from reading data from acm.timus.ru directly.
+ * server-side proxy for the Codeforces API to avoid browser CORS
+ * restrictions.
  */
 
 import express from 'express';
@@ -17,7 +16,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const app = express();
 const PORT = process.env.PORT || 3000;
 const DIST_DIR = path.join(__dirname, 'dist');
-const TIMUS_BASE = 'acm.timus.ru';
+const CF_BASE = 'codeforces.com';
 
 // Pre-load index.html once at startup so the SPA fallback route
 // does not perform a file-system read on every request.
@@ -55,57 +54,53 @@ function rateLimit(req, res, next) {
 app.use(express.static(DIST_DIR));
 
 // ---------------------------------------------------------------------------
-// Proxy: GET /api/timus-solved/:judgeId
-// Fetches the Timus author-stats page server-side and returns the list of
-// solved problem IDs as JSON, sidestepping the browser Same-Origin Policy.
+// Proxy: GET /api/cf/:method
+// Proxies requests to the Codeforces API (https://codeforces.com/api/:method)
+// with whatever query string was passed.  Validates the method name to
+// contain only alphanumeric characters and dots to prevent SSRF attacks.
 // ---------------------------------------------------------------------------
-app.get('/api/timus-solved/:judgeId', rateLimit, (req, res) => {
-  const { judgeId } = req.params;
+app.get('/api/cf/:method', rateLimit, (req, res) => {
+  const { method } = req.params;
 
-  // Only allow numeric judge IDs to prevent SSRF / path-traversal attacks.
-  if (!/^\d+$/.test(judgeId)) {
-    return res.status(400).json({ error: 'Invalid judge ID – must be numeric.' });
+  // Only allow safe method names (e.g. "user.info", "problemset.problems").
+  if (!/^[a-zA-Z0-9.]+$/.test(method)) {
+    return res.status(400).json({ error: 'Invalid method name.' });
   }
 
-  const timusPath = `/author.aspx?id=${judgeId}&space=1&action=getstat`;
+  const qs = req.url.includes('?') ? req.url.slice(req.url.indexOf('?')) : '';
+  const cfPath = `/api/${method}${qs}`;
   const options = {
-    hostname: TIMUS_BASE,
-    path: timusPath,
+    hostname: CF_BASE,
+    path: cfPath,
     headers: {
       'User-Agent': 'Mozilla/5.0 (compatible; HDD-App/1.0)',
-      Accept: 'text/html',
+      Accept: 'application/json',
     },
   };
 
-  const request = https.get(options, (timusRes) => {
-    if (timusRes.statusCode !== 200) {
-      res.status(502).json({ error: `Timus returned HTTP ${timusRes.statusCode}` });
-      timusRes.resume();
+  const request = https.get(options, (cfRes) => {
+    if (cfRes.statusCode !== 200) {
+      res.status(502).json({ error: `Codeforces returned HTTP ${cfRes.statusCode}` });
+      cfRes.resume();
       return;
     }
 
-    const chunks = [];
-    timusRes.on('data', (chunk) => { chunks.push(chunk); });
-    timusRes.on('end', () => {
-      // Solved problem IDs are extracted from <td class="accepted"> cells on
-      // the author stats page.  Each accepted cell contains a link of the form:
-      //   <a href="status.aspx?space=1&num=1293&author=...">1293</a>
-      // We extract the `num` parameter value from those links.
-      const body = Buffer.concat(chunks).toString('latin1');
-      const matches = [...body.matchAll(/class\s*=\s*(?:"[^"]*\baccepted\b[^"]*"|'[^']*\baccepted\b[^']*|[^\s>]*\baccepted\b[^\s>]*)[^>]*>\s*<a[^>]*[?&]num=(\d+)/g)];
-      const solvedIds = [...new Set(matches.map((m) => parseInt(m[1], 10)))];
-      res.json({ judgeId, solvedIds });
-    });
+    res.setHeader('Content-Type', 'application/json; charset=utf-8');
+    cfRes.pipe(res);
   });
 
   request.on('error', (err) => {
-    console.error('[proxy] Timus request failed:', err.message);
-    res.status(502).json({ error: 'Failed to reach Timus.' });
+    console.error('[proxy] Codeforces request failed:', err.message);
+    res.status(502).json({ error: 'Failed to reach Codeforces.' });
   });
 
-  request.setTimeout(12000, () => {
+  request.setTimeout(15000, () => {
     request.destroy();
-    res.status(504).json({ error: 'Timus request timed out.' });
+    if (!res.headersSent) {
+      res.status(504).json({ error: 'Codeforces request timed out.' });
+    } else {
+      res.end();
+    }
   });
 });
 
