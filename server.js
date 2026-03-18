@@ -27,7 +27,7 @@ const INDEX_HTML = fs.readFileSync(path.join(DIST_DIR, 'index.html'), 'utf-8');
 // Each IP is allowed at most RATE_LIMIT_MAX requests per RATE_LIMIT_WINDOW_MS.
 // ---------------------------------------------------------------------------
 const RATE_LIMIT_WINDOW_MS = 60_000; // 1 minute
-const RATE_LIMIT_MAX = 10;           // requests per window per IP
+const RATE_LIMIT_MAX = 60;           // requests per window per IP
 const rateLimitMap = new Map();      // ip -> { count, resetAt }
 
 function rateLimit(req, res, next) {

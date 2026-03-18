@@ -188,22 +188,24 @@ export async function fetchUserSolvedIds(handle) {
 /**
  * Fetch problems for a given tag from the CF problemset.
  * Returns array of problem objects: { contestId, index, name, rating, tags }
+ * Throws an error if the HTTP response is not OK or the API returns a non-OK status.
  */
 export async function fetchProblemsByTag(tag) {
-  try {
-    const res = await fetch(cfApiUrl('problemset.problems', { tags: tag }));
-    const data = await res.json();
-    if (data.status !== 'OK') return [];
-    return (data.result?.problems ?? []).map(p => ({
-      contestId: p.contestId,
-      index: p.index,
-      name: p.name,
-      rating: p.rating,
-      tags: p.tags,
-    }));
-  } catch {
-    return [];
+  const res = await fetch(cfApiUrl('problemset.problems', { tags: tag }));
+  if (!res.ok) {
+    throw new Error(`HTTP ${res.status} fetching problems for tag "${tag}"`);
   }
+  const data = await res.json();
+  if (data.status !== 'OK') {
+    throw new Error(`CF API error for tag "${tag}": ${data.comment || data.error || 'Unknown error'}`);
+  }
+  return (data.result?.problems ?? []).map(p => ({
+    contestId: p.contestId,
+    index: p.index,
+    name: p.name,
+    rating: p.rating,
+    tags: p.tags,
+  }));
 }
 
 /**
@@ -246,8 +248,9 @@ export async function getDailyProblem(tag, userRating, solvedIds) {
 
 /**
  * Fetch daily problems for all tags.
- * Returns an array of { tag, displayName, problem } objects.
+ * Returns an array of { tag, displayName, problem, error? } objects.
  * problem may be null for tags with no eligible problems.
+ * error is true when the fetch itself failed (network error, rate limit, etc.).
  *
  * If handle is null/empty, skip solved-filtering and use a default rating of 1200.
  */
@@ -266,8 +269,13 @@ export async function fetchAllDailyProblems(handle) {
 
   const results = await Promise.all(
     CF_TAGS.map(async ({ tag, displayName }) => {
-      const problem = await getDailyProblem(tag, userRating, solvedIds);
-      return { tag, displayName, problem };
+      try {
+        const problem = await getDailyProblem(tag, userRating, solvedIds);
+        return { tag, displayName, problem };
+      } catch (err) {
+        console.error(`[daily] Failed to load tag "${tag}":`, err.message);
+        return { tag, displayName, problem: null, error: true };
+      }
     })
   );
 

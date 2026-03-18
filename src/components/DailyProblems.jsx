@@ -26,7 +26,16 @@ function ratingBadgeClass(rating) {
   return 'daily-rating-badge--red';
 }
 
-function ProblemCard({ displayName, problem }) {
+function ProblemCard({ displayName, problem, error }) {
+  if (error) {
+    return (
+      <div className="daily-card daily-card--error">
+        <div className="daily-card-tag">{displayName}</div>
+        <div className="daily-card-error-msg" role="alert">⚠ Failed to load – try refreshing</div>
+      </div>
+    );
+  }
+
   if (!problem) {
     return (
       <div className="daily-card daily-card--empty">
@@ -70,12 +79,17 @@ function DailyProblems() {
   const [handle] = useState(loadHandle);
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   const load = useCallback(async () => {
     setLoading(true);
+    setError(null);
     try {
       const results = await fetchAllDailyProblems(handle || null);
       setItems(results);
+    } catch (err) {
+      console.error('[DailyProblems] Load failed:', err);
+      setError('Failed to load problems — please try refreshing.');
     } finally {
       setLoading(false);
     }
@@ -109,10 +123,12 @@ function DailyProblems() {
 
         {loading ? (
           <div className="daily-loading">Loading daily problems…</div>
+        ) : error ? (
+          <div className="daily-error-banner" role="alert">{error}</div>
         ) : (
           <div className="daily-grid">
-            {items.map(({ tag, displayName, problem }) => (
-              <ProblemCard key={tag} displayName={displayName} problem={problem} />
+            {items.map(({ tag, displayName, problem, error: tagError }) => (
+              <ProblemCard key={tag} displayName={displayName} problem={problem} error={tagError} />
             ))}
           </div>
         )}
