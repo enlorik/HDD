@@ -155,6 +155,23 @@
   font-family: monospace;
 }
 
+.daily-card-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+.daily-tag-chip {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: #aaaaaa;
+  background-color: #252525;
+  border: 1px solid #3a3a3a;
+  border-radius: 5px;
+  padding: 2px 7px;
+  text-transform: lowercase;
+}
+
 .daily-card-actions {
   margin-top: auto;
 }

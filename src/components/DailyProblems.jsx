@@ -61,6 +61,13 @@ function ProblemCard({ displayName, problem, error }) {
           {problem.contestId}{problem.index}
         </span>
       </div>
+      {problem.tags && problem.tags.length > 0 && (
+        <div className="daily-card-tags">
+          {problem.tags.map((t, i) => (
+            <span key={`${t}-${i}`} className="daily-tag-chip">{t}</span>
+          ))}
+        </div>
+      )}
       <div className="daily-card-actions">
         <a
           href={cfUrl}
