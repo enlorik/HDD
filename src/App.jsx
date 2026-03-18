@@ -1,8 +1,7 @@
 import { BrowserRouter as Router, Routes, Route, Link, useLocation } from 'react-router-dom'
 import Timeline from './components/Timeline'
 import Bounty from './components/Bounty'
-import TimusProblems from './components/TimusProblems'
-import ProblemDetail from './components/ProblemDetail'
+import DailyProblems from './components/DailyProblems'
 import Profile from './components/Profile'
 import './App.css'
 
@@ -27,10 +26,10 @@ function Navigation() {
             <span>Bounty</span>
           </Link>
           <Link 
-            to="/timus" 
-            className={`nav-link ${location.pathname === '/timus' ? 'active' : ''}`}
+            to="/daily" 
+            className={`nav-link ${location.pathname === '/daily' ? 'active' : ''}`}
           >
-            <span>Timus</span>
+            <span>Daily</span>
           </Link>
           <Link 
             to="/profile" 
@@ -52,8 +51,7 @@ function App() {
         <Routes>
           <Route path="/" element={<Timeline />} />
           <Route path="/bounty" element={<Bounty />} />
-          <Route path="/timus" element={<TimusProblems />} />
-          <Route path="/timus/:id" element={<ProblemDetail />} />
+          <Route path="/daily" element={<DailyProblems />} />
           <Route path="/profile" element={<Profile />} />
         </Routes>
       </div>
