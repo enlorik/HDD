@@ -272,6 +272,23 @@ export async function getDailyProblem(tag, userRating, solvedIds) {
 }
 
 /**
+ * Run an array of async task functions with at most `concurrency` running at
+ * a time, inserting a `delayMs` pause between batches to avoid rate-limit bursts.
+ */
+async function batchedPromiseAll(tasks, concurrency = 3, delayMs = 300) {
+  const results = [];
+  for (let i = 0; i < tasks.length; i += concurrency) {
+    const batch = tasks.slice(i, i + concurrency);
+    const batchResults = await Promise.all(batch.map(fn => fn()));
+    results.push(...batchResults);
+    if (i + concurrency < tasks.length) {
+      await new Promise(resolve => setTimeout(resolve, delayMs));
+    }
+  }
+  return results;
+}
+
+/**
  * Fetch daily problems for all tags.
  * Returns an array of { tag, displayName, problem, error? } objects.
  * problem may be null for tags with no eligible problems.
@@ -292,17 +309,15 @@ export async function fetchAllDailyProblems(handle) {
     solvedIds = solved;
   }
 
-  const results = await Promise.all(
-    CF_TAGS.map(async ({ tag, displayName }) => {
-      try {
-        const problem = await getDailyProblem(tag, userRating, solvedIds);
-        return { tag, displayName, problem };
-      } catch (err) {
-        console.error(`[daily] Failed to load tag "${tag}":`, err.message);
-        return { tag, displayName, problem: null, error: true };
-      }
-    })
-  );
+  const tasks = CF_TAGS.map(({ tag, displayName }) => async () => {
+    try {
+      const problem = await getDailyProblem(tag, userRating, solvedIds);
+      return { tag, displayName, problem };
+    } catch (err) {
+      console.error(`[daily] Failed to load tag "${tag}":`, err.message);
+      return { tag, displayName, problem: null, error: true };
+    }
+  });
 
-  return results;
+  return batchedPromiseAll(tasks, 3, 300);
 }
