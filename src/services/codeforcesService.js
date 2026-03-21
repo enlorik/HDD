@@ -211,26 +211,64 @@ export async function fetchUserSolvedIds(handle) {
 }
 
 /**
+ * In-memory cache for the full CF problemset (valid for the current browser session).
+ * Keyed by a timestamp so we only refetch if the cache is older than CACHE_TTL_MS.
+ * _allProblemsInflight holds the in-flight promise to deduplicate concurrent requests.
+ */
+let _allProblemsCache = null;
+let _allProblemsCachedAt = 0;
+let _allProblemsInflight = null;
+const CACHE_TTL_MS = 10 * 60 * 1000; // 10 minutes
+
+/**
+ * Fetch the entire CF problemset once and cache it in memory.
+ * Concurrent calls share the same in-flight request; subsequent calls within
+ * CACHE_TTL_MS return the cached array without a network request.
+ * Returns array of problem objects: { contestId, index, name, rating, tags }
+ */
+async function fetchAllProblems() {
+  const now = Date.now();
+  if (_allProblemsCache && now - _allProblemsCachedAt < CACHE_TTL_MS) {
+    return _allProblemsCache;
+  }
+  // Deduplicate concurrent requests by reusing the in-flight promise.
+  if (_allProblemsInflight) {
+    return _allProblemsInflight;
+  }
+  _allProblemsInflight = (async () => {
+    try {
+      const res = await fetch(cfApiUrl('problemset.problems'));
+      if (!res.ok) {
+        throw new Error(`HTTP ${res.status} fetching problemset`);
+      }
+      const data = await res.json();
+      if (data.status !== 'OK') {
+        throw new Error(`CF API error fetching problemset: ${data.comment || data.error || 'Unknown error'}`);
+      }
+      _allProblemsCache = (data.result?.problems ?? []).map(p => ({
+        contestId: p.contestId,
+        index: p.index,
+        name: p.name,
+        rating: p.rating,
+        tags: p.tags,
+      }));
+      _allProblemsCachedAt = Date.now();
+      return _allProblemsCache;
+    } finally {
+      _allProblemsInflight = null;
+    }
+  })();
+  return _allProblemsInflight;
+}
+
+/**
  * Fetch problems for a given tag from the CF problemset.
  * Returns array of problem objects: { contestId, index, name, rating, tags }
  * Throws an error if the HTTP response is not OK or the API returns a non-OK status.
  */
 export async function fetchProblemsByTag(tag) {
-  const res = await fetch(cfApiUrl('problemset.problems', { tags: tag }));
-  if (!res.ok) {
-    throw new Error(`HTTP ${res.status} fetching problems for tag "${tag}"`);
-  }
-  const data = await res.json();
-  if (data.status !== 'OK') {
-    throw new Error(`CF API error for tag "${tag}": ${data.comment || data.error || 'Unknown error'}`);
-  }
-  return (data.result?.problems ?? []).map(p => ({
-    contestId: p.contestId,
-    index: p.index,
-    name: p.name,
-    rating: p.rating,
-    tags: p.tags,
-  }));
+  const all = await fetchAllProblems();
+  return all.filter(p => p.tags && p.tags.includes(tag));
 }
 
 /**
@@ -300,24 +338,61 @@ export async function fetchAllDailyProblems(handle) {
   let userRating = 1200;
   let solvedIds = new Set();
 
-  if (handle) {
-    const [info, solved] = await Promise.all([
-      fetchUserInfo(handle),
-      fetchUserSolvedIds(handle),
+  // Fetch user info and the full problemset in parallel to minimise total latency.
+  const userInfoPromise = handle
+    ? Promise.all([fetchUserInfo(handle), fetchUserSolvedIds(handle)])
+    : Promise.resolve([null, new Set()]);
+
+  let allProblems;
+  try {
+    let userInfoResult;
+    [allProblems, [userInfoResult, solvedIds]] = await Promise.all([
+      fetchAllProblems(),
+      userInfoPromise,
     ]);
-    if (info) userRating = info.rating;
-    solvedIds = solved;
+    if (userInfoResult) userRating = userInfoResult.rating;
+  } catch (err) {
+    console.error('[daily] Failed to load problemset or user info:', err.message);
+    // Return error cards for every tag so the UI still renders something useful.
+    return CF_TAGS.map(({ tag, displayName }) => ({ tag, displayName, problem: null, error: true }));
   }
 
-  const tasks = CF_TAGS.map(({ tag, displayName }) => async () => {
+  // Pre-group problems by tag to avoid scanning the entire problemset 32 times.
+  const problemsByTag = new Map();
+  for (const p of allProblems) {
+    if (!p.tags) continue;
+    for (const t of p.tags) {
+      if (!problemsByTag.has(t)) problemsByTag.set(t, []);
+      problemsByTag.get(t).push(p);
+    }
+  }
+
+  // Build a numeric seed from the UTC calendar date (YYYYMMDD).
+  const today = new Date();
+  const dateSeed =
+    today.getUTCFullYear() * 10000 +
+    (today.getUTCMonth() + 1) * 100 +
+    today.getUTCDate();
+
+  return CF_TAGS.map(({ tag, displayName }) => {
     try {
-      const problem = await getDailyProblem(tag, userRating, solvedIds);
-      return { tag, displayName, problem };
+      const eligible = (problemsByTag.get(tag) ?? [])
+        .filter(p =>
+          p.rating != null &&
+          p.rating >= userRating - 100 &&
+          p.rating <= userRating + 300 &&
+          !solvedIds.has(`${p.contestId}${p.index}`)
+        )
+        .sort((a, b) => b.contestId - a.contestId)
+        .slice(0, 20);
+
+      if (!eligible.length) return { tag, displayName, problem: null };
+
+      const dayIndex = dateSeed % eligible.length;
+      return { tag, displayName, problem: eligible[dayIndex] };
     } catch (err) {
-      console.error(`[daily] Failed to load tag "${tag}":`, err.message);
+      console.error(`[daily] Failed to pick problem for tag "${tag}":`, err.message);
       return { tag, displayName, problem: null, error: true };
     }
   });
-
-  return batchedPromiseAll(tasks, 3, 300);
 }
