@@ -233,17 +233,76 @@ export async function fetchProblemsByTag(tag) {
   }));
 }
 
+// In-memory cache for the full problemset (valid for the lifetime of the page).
+let _allProblemsCache = null;
+
 /**
- * Pick one "daily" problem for a given tag, personalised to the user.
+ * Fetch the entire CF problemset in a single API call.
+ * Results are cached in memory so subsequent calls within the same page
+ * session don't make another network request.
+ */
+async function fetchAllProblems() {
+  if (_allProblemsCache) return _allProblemsCache;
+  const res = await fetch(cfApiUrl('problemset.problems'));
+  if (!res.ok) {
+    throw new Error(`HTTP ${res.status} fetching CF problemset`);
+  }
+  const data = await res.json();
+  if (data.status !== 'OK') {
+    throw new Error(`CF API error: ${data.comment || data.error || 'Unknown error'}`);
+  }
+  _allProblemsCache = (data.result?.problems ?? []).map(p => ({
+    contestId: p.contestId,
+    index: p.index,
+    name: p.name,
+    rating: p.rating,
+    tags: p.tags,
+  }));
+  return _allProblemsCache;
+}
+
+/**
+ * Pick one "daily" problem for a given tag from a pre-fetched list of problems,
+ * personalised to the user.
  *
  * Algorithm:
- * 1. Filter problems to those with rating in [userRating - 100, userRating + 300].
+ * 1. Filter problems to those tagged with `tag` and rating in
+ *    [userRating - 100, userRating + 300].
  * 2. Exclude problems already solved by the user.
  * 3. Prefer problems from recent contests (sort by contestId descending).
- * 4. From the top 20 eligible candidates, pick one deterministically using:
- *      index = Math.floor(Date.now() / 86400000) % candidates.length
- *    so it rotates daily but is stable within the same day.
+ * 4. From the top 20 eligible candidates, pick one deterministically using a
+ *    UTC calendar-date seed (YYYYMMDD) so the selection rotates daily but is
+ *    stable within the same day.
  * 5. Return the chosen problem, or null if no eligible problems found.
+ */
+function pickDailyProblem(problems, tag, userRating, solvedIds) {
+  const eligible = problems
+    .filter(p =>
+      p.tags?.includes(tag) &&
+      p.rating != null &&
+      p.rating >= userRating - 100 &&
+      p.rating <= userRating + 300 &&
+      !solvedIds.has(`${p.contestId}${p.index}`)
+    )
+    .sort((a, b) => b.contestId - a.contestId)
+    .slice(0, 20);
+
+  if (!eligible.length) return null;
+
+  // Build a numeric seed from the UTC calendar date (YYYYMMDD) so every user
+  // sees the same problem on the same calendar day regardless of time zone.
+  const today = new Date();
+  const dateSeed =
+    today.getUTCFullYear() * 10000 +
+    (today.getUTCMonth() + 1) * 100 +
+    today.getUTCDate();
+  const dayIndex = dateSeed % eligible.length;
+  return eligible[dayIndex];
+}
+
+/**
+ * Pick one "daily" problem for a given tag, personalised to the user.
+ * Fetches problems for the tag from the CF API.
  */
 export async function getDailyProblem(tag, userRating, solvedIds) {
   const problems = await fetchProblemsByTag(tag);
@@ -272,52 +331,37 @@ export async function getDailyProblem(tag, userRating, solvedIds) {
 }
 
 /**
- * Run an array of async task functions with at most `concurrency` running at
- * a time, inserting a `delayMs` pause between batches to avoid rate-limit bursts.
- */
-async function batchedPromiseAll(tasks, concurrency = 3, delayMs = 300) {
-  const results = [];
-  for (let i = 0; i < tasks.length; i += concurrency) {
-    const batch = tasks.slice(i, i + concurrency);
-    const batchResults = await Promise.all(batch.map(fn => fn()));
-    results.push(...batchResults);
-    if (i + concurrency < tasks.length) {
-      await new Promise(resolve => setTimeout(resolve, delayMs));
-    }
-  }
-  return results;
-}
-
-/**
  * Fetch daily problems for all tags.
  * Returns an array of { tag, displayName, problem, error? } objects.
  * problem may be null for tags with no eligible problems.
  * error is true when the fetch itself failed (network error, rate limit, etc.).
  *
  * If handle is null/empty, skip solved-filtering and use a default rating of 1200.
+ *
+ * Uses a single CF API call to fetch the entire problemset and then filters
+ * client-side per tag, avoiding the per-tag API calls that previously caused
+ * rate-limit failures when there are many tags.
  */
 export async function fetchAllDailyProblems(handle) {
   let userRating = 1200;
   let solvedIds = new Set();
 
-  if (handle) {
-    const [info, solved] = await Promise.all([
-      fetchUserInfo(handle),
-      fetchUserSolvedIds(handle),
-    ]);
-    if (info) userRating = info.rating;
-    solvedIds = solved;
-  }
+  // Kick off user info + full problemset fetch in parallel.
+  const userInfoPromise = handle
+    ? Promise.all([fetchUserInfo(handle), fetchUserSolvedIds(handle)])
+    : Promise.resolve([null, new Set()]);
 
-  const tasks = CF_TAGS.map(({ tag, displayName }) => async () => {
-    try {
-      const problem = await getDailyProblem(tag, userRating, solvedIds);
-      return { tag, displayName, problem };
-    } catch (err) {
-      console.error(`[daily] Failed to load tag "${tag}":`, err.message);
-      return { tag, displayName, problem: null, error: true };
-    }
+  const [userResult, allProblems] = await Promise.all([
+    userInfoPromise,
+    fetchAllProblems(),
+  ]);
+
+  const [info, solved] = userResult;
+  if (info) userRating = info.rating;
+  if (solved) solvedIds = solved;
+
+  return CF_TAGS.map(({ tag, displayName }) => {
+    const problem = pickDailyProblem(allProblems, tag, userRating, solvedIds);
+    return { tag, displayName, problem };
   });
-
-  return batchedPromiseAll(tasks, 3, 300);
 }
