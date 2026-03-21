@@ -1,7 +1,6 @@
 # HDD
 
-A React + Vite competitive programming dashboard for tracking Codeforces contests and Timus Online Judge problems. Features a visual contest timeline, a bounty board of active contests, a full Timus problem browser with solved-status tracking, and a locally-stored user profile.
-
+A React + Vite competitive programming dashboard for tracking Codeforces contests and getting personalised daily problem recommendations.
 
 ## Features
 
@@ -17,25 +16,18 @@ A React + Vite competitive programming dashboard for tracking Codeforces contest
 - Each card shows the contest type badge, name, phase, and start date.
 - Click a card to go directly to the Codeforces contest page.
 
-### 3. Timus Problems (`/timus`)
-- Browse 1,000+ Timus Online Judge problems loaded from a daily-updated JSON file.
-- Filter by volume/category or toggle between unsolved / solved views.
-- Color-coded difficulty levels: Easy (green), Medium (blue), Hard (orange), Expert (red).
-- Mark problems solved or unsolved manually; status persists in `localStorage`.
-- If a Judge ID is saved in your profile, solved problems are auto-synced from Timus on page load.
-- Submit button opens the Timus submission form pre-filled with problem ID, Judge ID, and chosen language.
+### 3. Daily Problems (`/daily`)
+- One recommended Codeforces problem per topic tag across **34 tags**.
+- Problems are personalised to your current rating and filtered to exclude problems you've already solved.
+- Default rating of 1200 is used when no handle is set.
+- Problem selection is deterministic by UTC date (same picks every day) and rotates daily.
+- Rating badge colour coding: ≤ 1200 green, ≤ 1600 blue, ≤ 2000 orange, > 2000 red.
+- Manual **🔄 Refresh** button to reload all cards.
 
-### 4. Problem Detail (`/timus/:id`)
-- Detailed view for a single Timus problem.
-- Shows metadata: difficulty, category, and total solve count.
-- Language selector supporting 11 languages (C++17, C++14, Java, Python 3, etc.).
-- Opens the Timus submission page in a new tab with fields pre-filled.
-- Mark / unmark the problem as solved from this view.
-
-### 5. Profile (`/profile`)
-- Store your Timus username, Timus Judge ID, and Codeforces handle locally.
+### 4. Profile (`/profile`)
+- Store your Codeforces handle locally.
 - Data is saved to `localStorage` under the key `hdd-user-profile` — no account required.
-- Judge ID is used to pre-fill Timus submission forms and to auto-sync solved problems.
+- The handle is used by the Daily Problems page to fetch your rating and filter solved problems.
 
 ## Tech Stack
 
@@ -46,36 +38,26 @@ A React + Vite competitive programming dashboard for tracking Codeforces contest
 | Routing | React Router v7 |
 | Styling | Per-component CSS files |
 | State persistence | Browser `localStorage` |
-| Deployment | Railway (Nix/serve) |
-| CI / data refresh | GitHub Actions |
+| Production server | Express 5 (`server.js`) |
+| Deployment | Railway |
 
 ## Project Structure
 
 ```
 HDD/
-├── data/
-│   ├── problems.json            # Tag-based Timus problem metadata (populated by fetch_problems.py)
-│   └── solved_problems.json     # Per-user solved lists keyed by Timus Judge ID
 ├── public/
-│   └── timus-problems.json      # Daily-updated Timus problem list
-├── scripts/
-│   ├── fetch_problems.py        # Scrapes all 13 Timus tag pages → data/problems.json
-│   ├── update_solved.py         # Fetches solved problems for a user → data/solved_problems.json
-│   └── fetch_timus_problems.py  # Scraper that generates timus-problems.json
 ├── src/
 │   ├── components/
 │   │   ├── Timeline.jsx / .css
 │   │   ├── Bounty.jsx / .css
-│   │   ├── TimusProblems.jsx / .css
-│   │   ├── ProblemDetail.jsx / .css
+│   │   ├── DailyProblems.jsx / .css
 │   │   └── Profile.jsx / .css
 │   ├── services/
-│   │   ├── codeforcesService.js
-│   │   └── timusService.js
+│   │   ├── codeforcesService.js   # Contests, timeline helpers, daily problem logic
+│   │   └── mockCodeforcesData.js  # Fallback mock data for development
 │   └── App.jsx
-├── .github/workflows/
-│   └── update-timus-problems.yml  # Runs daily at 03:00 UTC
-├── railway.json
+├── server.js        # Express production server + Codeforces API proxy
+├── railway.json     # Railway deployment config
 └── package.json
 ```
 
@@ -94,6 +76,8 @@ npm run dev
 
 The app will be available at `http://localhost:5173`.
 
+In development the frontend calls the Codeforces API directly (no proxy needed).
+
 ### Build
 
 ```bash
@@ -107,70 +91,24 @@ npm run preview     # serve the production build locally
 npm run lint
 ```
 
-## Automated Data Updates
+## Production Server
 
-The Timus problem list (`public/timus-problems.json`) is refreshed daily via a GitHub Actions workflow (`.github/workflows/update-timus-problems.yml`). The workflow:
+`server.js` is an Express 5 server that:
 
-1. Runs the Python scraper `scripts/fetch_timus_problems.py`.
-2. Commits and pushes the updated JSON if any problems changed.
+- Serves the compiled Vite SPA from `dist/`.
+- Proxies `GET /api/cf/:method` to `https://codeforces.com/api/:method`, forwarding any query parameters. This avoids browser CORS restrictions in production.
+- Applies a simple in-memory rate limiter (60 requests/min per IP) to protect the proxy.
 
-The workflow can also be triggered manually from the GitHub Actions UI.
-
-## Tag-Based Problem Tracking
-
-Two scripts let you group Timus problems by topic tag and track per-user solved progress. All data is stored locally in the `data/` directory — no external dependencies required (stdlib only).
-
-### 1. Fetch problems by tag
+Start with:
 
 ```bash
-python scripts/fetch_problems.py
+npm start   # node server.js
 ```
-
-Scrapes all 13 tag pages from acm.timus.ru and writes merged problem metadata to `data/problems.json`.
-
-### 2. Update solved problems for a user
-
-```bash
-python scripts/update_solved.py <judge_id>
-```
-
-Replace `<judge_id>` with your numeric Timus Judge ID (visible in your Timus profile URL). The script:
-
-1. Fetches your accepted submissions from Timus.
-2. Updates `data/solved_problems.json` with the solved problem IDs for your judge ID.
-3. Prints a progress table:
-
-```
-Tag                                Solved / Total
--------------------------------------------------
-Data Structures Problems                5 /     50
-Dynamic Programming Problems           10 /     30
-Graph Theory Problems                   3 /     42
-...
-```
-
-### Supported tags (13)
-
-| Display Name                  | Tag slug      |
-|-------------------------------|---------------|
-| Data Structures Problems      | `structure`   |
-| Dynamic Programming Problems  | `dynprog`     |
-| Game Problems                 | `game`        |
-| Geometry Problems             | `geometry`    |
-| Graph Theory Problems         | `graphs`      |
-| Hardest Problems              | `hardest`     |
-| Mathematical Problems         | `math`        |
-| Number Theory Problems        | `numbers`     |
-| Problems for Beginners        | `beginners`   |
-| Problems on Palindromes       | `palindromes` |
-| String Algorithms Problems    | `string`      |
-| Tricky Problems               | `tricky`      |
-| Unusual Problems              | `unusual`     |
 
 ## Deployment
 
 The app is configured for [Railway](https://railway.app) via `railway.json`:
 
 - **Build**: `npm run build` (Nixpacks builder)
-- **Start**: `npx serve dist --listen $PORT`
+- **Start**: `node server.js`
 - **Restart policy**: on failure, up to 10 retries
