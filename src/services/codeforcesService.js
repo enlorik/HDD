@@ -160,17 +160,16 @@ const CF_TAGS = [
   { tag: 'dsu',                       displayName: 'DSU' },
 ];
 
+// Export CF_TAGS so it can be used for category selection UI
+export { CF_TAGS };
+
 /**
- * Build a URL for the CF API.  In production, route through the server proxy
- * to avoid browser CORS restrictions.  In development, call the CF API
- * directly (the Vite dev server doesn't proxy these paths).
+ * Build a URL for the CF API.  Always route through the server proxy
+ * to avoid browser CORS restrictions (now works in both dev and production).
  */
 function cfApiUrl(method, params = {}) {
   const qs = new URLSearchParams(params).toString();
   const query = qs ? `?${qs}` : '';
-  if (import.meta.env.DEV) {
-    return `https://codeforces.com/api/${method}${query}`;
-  }
   return `/api/cf/${method}${query}`;
 }
 
@@ -241,11 +240,16 @@ export async function fetchProblemsByTag(tag) {
  * 2. Exclude problems already solved by the user.
  * 3. Prefer problems from recent contests (sort by contestId descending).
  * 4. From the top 20 eligible candidates, pick one deterministically using:
- *      index = Math.floor(Date.now() / 86400000) % candidates.length
+ *      index = (Math.floor(Date.now() / 86400000) + offset) % candidates.length
  *    so it rotates daily but is stable within the same day.
  * 5. Return the chosen problem, or null if no eligible problems found.
+ *
+ * @param {string} tag - The problem tag to filter by
+ * @param {number} userRating - User's rating for filtering problem difficulty
+ * @param {Set} solvedIds - Set of problem IDs the user has already solved
+ * @param {number} offset - Offset for selecting a different problem (default 0)
  */
-export async function getDailyProblem(tag, userRating, solvedIds) {
+export async function getDailyProblem(tag, userRating, solvedIds, offset = 0) {
   const problems = await fetchProblemsByTag(tag);
 
   const eligible = problems
@@ -267,7 +271,7 @@ export async function getDailyProblem(tag, userRating, solvedIds) {
     today.getUTCFullYear() * 10000 +
     (today.getUTCMonth() + 1) * 100 +
     today.getUTCDate();
-  const dayIndex = dateSeed % eligible.length;
+  const dayIndex = (dateSeed + offset) % eligible.length;
   return eligible[dayIndex];
 }
 
@@ -289,14 +293,18 @@ async function batchedPromiseAll(tasks, concurrency = 3, delayMs = 300) {
 }
 
 /**
- * Fetch daily problems for all tags.
+ * Fetch daily problems for selected tags.
  * Returns an array of { tag, displayName, problem, error? } objects.
  * problem may be null for tags with no eligible problems.
  * error is true when the fetch itself failed (network error, rate limit, etc.).
  *
+ * @param {string|null} handle - Codeforces handle (null for default rating)
+ * @param {Array<string>} selectedTags - Array of tag strings to fetch (defaults to first 5)
+ * @param {Object} offsets - Map of tag -> offset for getting different problems
+ *
  * If handle is null/empty, skip solved-filtering and use a default rating of 1200.
  */
-export async function fetchAllDailyProblems(handle) {
+export async function fetchAllDailyProblems(handle, selectedTags = null, offsets = {}) {
   let userRating = 1200;
   let solvedIds = new Set();
 
@@ -309,9 +317,18 @@ export async function fetchAllDailyProblems(handle) {
     solvedIds = solved;
   }
 
-  const tasks = CF_TAGS.map(({ tag, displayName }) => async () => {
+  // If no tags selected, use first 5 as default
+  const tagsToFetch = selectedTags || CF_TAGS.slice(0, 5).map(t => t.tag);
+
+  const tasks = tagsToFetch.map((tagString) => async () => {
+    const tagInfo = CF_TAGS.find(t => t.tag === tagString);
+    if (!tagInfo) return null;
+
+    const { tag, displayName } = tagInfo;
+    const offset = offsets[tag] || 0;
+
     try {
-      const problem = await getDailyProblem(tag, userRating, solvedIds);
+      const problem = await getDailyProblem(tag, userRating, solvedIds, offset);
       return { tag, displayName, problem };
     } catch (err) {
       console.error(`[daily] Failed to load tag "${tag}":`, err.message);
@@ -319,5 +336,6 @@ export async function fetchAllDailyProblems(handle) {
     }
   });
 
-  return batchedPromiseAll(tasks, 3, 300);
+  const results = await batchedPromiseAll(tasks, 3, 300);
+  return results.filter(r => r !== null);
 }
