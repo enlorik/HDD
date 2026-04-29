@@ -1,260 +1,213 @@
+/* ── Daily Problems ─────────────────────────────────────────────── */
 .daily-container {
   min-height: 100vh;
-  background-color: #111;
-  color: #e0e0e0;
-  padding: 2rem;
+  background-color: var(--ik-bg);
+  color: var(--ik-text);
+  padding: 1.75rem 2rem 3rem;
 }
+.daily-content { max-width: 1200px; margin: 0 auto; }
 
-.daily-content {
-  max-width: 1100px;
-  margin: 0 auto;
-}
-
-.daily-header {
-  margin-bottom: 1.75rem;
-}
+/* header */
+.daily-header { margin-bottom: 1.5rem; }
 
 .daily-title {
-  font-size: 2rem;
-  font-weight: 700;
-  color: #ffffff;
-  margin-bottom: 0.5rem;
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: var(--ik-text);
+  margin-bottom: 0.35rem;
 }
 
 .daily-date {
-  font-size: 0.9rem;
-  color: #888888;
+  font-size: 0.82rem;
+  color: var(--ik-muted);
   margin-bottom: 0.75rem;
 }
 
 .daily-notice {
-  font-size: 0.9rem;
-  color: #888888;
-  background-color: #1a1a1a;
-  border: 1px solid #3a3a3a;
-  border-radius: 8px;
-  padding: 0.6rem 1rem;
+  font-size: 0.85rem;
+  color: var(--ik-muted);
+  background-color: var(--ik-surface);
+  border: 1px solid var(--ik-border);
+  border-radius: var(--ik-radius-sm);
+  padding: 0.5rem 1rem;
   display: inline-block;
   margin-bottom: 0.75rem;
 }
-
-.daily-notice a {
-  color: #4a9eff;
-  text-decoration: none;
-}
-
-.daily-notice a:hover {
-  text-decoration: underline;
-}
+.daily-notice a { color: var(--ik-cf); }
+.daily-notice a:hover { color: var(--ik-yellow); }
 
 .daily-refresh-btn {
-  background-color: #1a1a1a;
-  border: 1px solid #3a3a3a;
-  border-radius: 8px;
-  color: #e0e0e0;
-  padding: 0.5rem 1.1rem;
-  font-size: 0.9rem;
+  background-color: var(--ik-surface);
+  border: 1px solid var(--ik-border);
+  color: var(--ik-muted);
+  padding: 0.45rem 1rem;
+  font-size: 0.85rem;
   font-weight: 600;
   cursor: pointer;
-  transition: border-color 0.2s, color 0.2s;
+  transition: all 0.15s;
+  border-radius: var(--ik-radius-sm);
+  font-family: var(--ik-sans);
 }
-
 .daily-refresh-btn:hover {
-  border-color: #f4ff3a;
-  color: #f4ff3a;
+  border-color: var(--ik-yellow);
+  color: var(--ik-yellow);
+  background-color: var(--ik-yellow-dim);
 }
+.daily-refresh-btn:disabled { opacity: 0.4; cursor: not-allowed; }
 
-.daily-refresh-btn:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-/* Loading */
 .daily-loading {
   text-align: center;
   padding: 4rem 2rem;
-  color: #666666;
-  font-size: 1.05rem;
+  color: var(--ik-muted2);
+  font-size: 0.9rem;
 }
 
-/* Card grid */
+/* ── Card grid ──────────────────────────────────────────────────── */
 .daily-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 1.25rem;
+  gap: 0.75rem;
 }
 
-/* Problem card */
+/* IK post card — rounded, has the [Tag] bracket feel at top */
 .daily-card {
-  background-color: #1a1a1a;
-  border: 1px solid #3a3a3a;
-  border-radius: 12px;
-  padding: 1.4rem 1.5rem;
+  background-color: var(--ik-card);
+  border: 1px solid var(--ik-border);
+  border-radius: var(--ik-radius);
+  padding: 1.1rem 1.15rem 1.15rem;
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
-  transition: border-color 0.2s;
+  gap: 0.55rem;
+  transition: transform 0.18s, box-shadow 0.18s, background 0.15s;
 }
-
 .daily-card:hover {
-  border-color: #4a9eff;
+  background-color: var(--ik-card-hover);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(0,0,0,0.35);
 }
 
+/* [Tag] bracket label — exactly like IK [Post] [Info] [Notice] */
 .daily-card-tag {
-  font-size: 0.8rem;
-  font-weight: 700;
-  color: #f4ff3a;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
+  font-size: 0.72rem;
+  font-weight: 800;
+  color: var(--ik-yellow);
+  letter-spacing: 0.04em;
+  background: rgba(244,232,74,0.1);
+  border: 1px solid rgba(244,232,74,0.3);
+  border-radius: 4px;
+  padding: 2px 7px;
+  align-self: flex-start;
+  white-space: nowrap;
 }
 
 .daily-card-name {
-  font-size: 1rem;
+  font-size: 0.93rem;
   font-weight: 700;
-  color: #ffffff;
-  line-height: 1.4;
+  color: var(--ik-text);
+  line-height: 1.35;
 }
 
 .daily-card-meta {
   display: flex;
   align-items: center;
-  gap: 0.6rem;
+  gap: 0.5rem;
   flex-wrap: wrap;
 }
 
+/* rating badges — IK uses colored rounded pills */
 .daily-rating-badge {
-  font-size: 0.82rem;
+  font-size: 0.75rem;
   font-weight: 700;
-  padding: 2px 9px;
-  border-radius: 10px;
+  padding: 2px 8px;
+  border-radius: 999px;
 }
-
 .daily-rating-badge--green {
-  background-color: rgba(76, 175, 80, 0.15);
+  background-color: rgba(76,175,80,0.15);
   color: #4caf50;
 }
-
 .daily-rating-badge--blue {
-  background-color: rgba(74, 158, 255, 0.15);
-  color: #4a9eff;
+  background-color: rgba(74,158,255,0.15);
+  color: var(--ik-cf);
 }
-
 .daily-rating-badge--orange {
-  background-color: rgba(255, 152, 0, 0.15);
-  color: #ff9800;
+  background-color: rgba(255,107,61,0.15);
+  color: var(--ik-ioi);
 }
-
 .daily-rating-badge--red {
-  background-color: rgba(244, 67, 54, 0.15);
-  color: #f44336;
+  background-color: rgba(255,77,77,0.15);
+  color: var(--ik-red);
 }
 
 .daily-problem-id {
-  font-size: 0.82rem;
-  color: #888888;
+  font-size: 0.78rem;
+  color: var(--ik-muted2);
   font-family: monospace;
 }
 
 .daily-card-tags {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.35rem;
+  display: flex; flex-wrap: wrap; gap: 0.3rem;
 }
-
 .daily-tag-chip {
-  font-size: 0.72rem;
-  font-weight: 600;
-  color: #aaaaaa;
-  background-color: #252525;
-  border: 1px solid #3a3a3a;
-  border-radius: 5px;
-  padding: 2px 7px;
-  text-transform: lowercase;
+  font-size: 0.7rem;
+  font-weight: 500;
+  color: var(--ik-muted);
+  background-color: var(--ik-surface);
+  border: 1px solid var(--ik-border);
+  border-radius: 4px;
+  padding: 1px 6px;
 }
 
-.daily-card-actions {
-  margin-top: auto;
-}
+.daily-card-actions { margin-top: auto; padding-top: 0.25rem; }
 
 .daily-solve-btn {
-  background-color: #f4ff3a;
-  color: #0a0a0a;
-  border: none;
-  border-radius: 7px;
-  padding: 0.5rem 1.1rem;
-  font-size: 0.88rem;
-  font-weight: 700;
-  cursor: pointer;
-  text-decoration: none;
   display: inline-block;
-  transition: background-color 0.2s, box-shadow 0.2s;
+  font-family: var(--ik-sans);
+  font-size: 0.8rem;
+  font-weight: 700;
+  text-decoration: none;
+  color: #1a1a1a;
+  background-color: var(--ik-yellow);
+  padding: 0.4rem 1rem;
+  border-radius: 999px;
+  border: none;
+  cursor: pointer;
+  transition: all 0.15s;
 }
-
 .daily-solve-btn:hover {
-  background-color: #e8f230;
-  box-shadow: 0 0 10px rgba(244, 255, 58, 0.3);
+  background-color: #fff;
+  color: #1a1a1a;
+  box-shadow: 0 4px 14px var(--ik-yellow-glow);
 }
 
-/* Empty card state */
-.daily-card--empty {
-  justify-content: center;
-  align-items: center;
-  text-align: center;
-}
-
-.daily-card-empty-msg {
-  color: #555555;
-  font-size: 0.9rem;
-}
-
-/* Error banner (top-level load failure) */
-.daily-error-banner {
-  background-color: rgba(244, 67, 54, 0.1);
-  border: 1px solid rgba(244, 67, 54, 0.4);
-  border-radius: 10px;
-  color: #f44336;
-  font-size: 1rem;
-  font-weight: 600;
-  padding: 1rem 1.5rem;
-  margin-bottom: 1.5rem;
-  text-align: center;
-}
-
-/* Error card state (per-tag fetch failure) */
+/* empty / error states */
+.daily-card--empty,
 .daily-card--error {
-  justify-content: center;
-  align-items: center;
-  text-align: center;
-  border-color: rgba(244, 67, 54, 0.3);
+  justify-content: flex-start;
+  align-items: flex-start;
 }
-
-.daily-card--error:hover {
-  border-color: rgba(244, 67, 54, 0.6);
+.daily-card-empty-msg {
+  color: var(--ik-muted2);
+  font-size: 0.82rem;
 }
-
-.daily-card-error-msg {
-  color: #f44336;
+.daily-error-banner {
+  background-color: rgba(255,77,77,0.08);
+  border: 1px solid rgba(255,77,77,0.25);
+  border-radius: var(--ik-radius-sm);
+  color: var(--ik-red);
   font-size: 0.9rem;
+  font-weight: 600;
+  padding: 0.85rem 1.1rem;
+  margin-bottom: 1.25rem;
+}
+.daily-card--error { border-color: rgba(255,77,77,0.3); }
+.daily-card-error-msg {
+  color: var(--ik-red);
+  font-size: 0.82rem;
   font-weight: 600;
 }
 
-/* Responsive */
-@media (max-width: 900px) {
-  .daily-grid {
-    grid-template-columns: repeat(2, 1fr);
-  }
-}
-
+@media (max-width: 900px) { .daily-grid { grid-template-columns: repeat(2, 1fr); } }
 @media (max-width: 560px) {
-  .daily-container {
-    padding: 1rem;
-  }
-
-  .daily-title {
-    font-size: 1.5rem;
-  }
-
-  .daily-grid {
-    grid-template-columns: 1fr;
-  }
+  .daily-container { padding: 1rem 1rem 2rem; }
+  .daily-grid { grid-template-columns: 1fr; }
 }
