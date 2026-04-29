@@ -1,9 +1,10 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
-import { fetchAllDailyProblems } from '../services/codeforcesService';
+import { fetchAllDailyProblems, CF_TAGS } from '../services/codeforcesService';
 import './DailyProblems.css';
 
 const STORAGE_KEY = 'hdd-user-profile';
+const SELECTED_TAGS_KEY = 'hdd-selected-tags';
 
 function loadHandle() {
   try {
@@ -11,6 +12,28 @@ function loadHandle() {
     return saved ? (JSON.parse(saved).codeforcesHandle || '') : '';
   } catch {
     return '';
+  }
+}
+
+function loadSelectedTags() {
+  try {
+    const saved = localStorage.getItem(SELECTED_TAGS_KEY);
+    if (saved) {
+      const tags = JSON.parse(saved);
+      if (Array.isArray(tags) && tags.length > 0) return tags;
+    }
+  } catch {
+    // fall through
+  }
+  // Default to first 5 tags
+  return CF_TAGS.slice(0, 5).map(t => t.tag);
+}
+
+function saveSelectedTags(tags) {
+  try {
+    localStorage.setItem(SELECTED_TAGS_KEY, JSON.stringify(tags));
+  } catch {
+    // ignore
   }
 }
 
@@ -26,12 +49,21 @@ function ratingBadgeClass(rating) {
   return 'daily-rating-badge--red';
 }
 
-function ProblemCard({ displayName, problem, error }) {
+function ProblemCard({ displayName, problem, error, onRefresh, refreshing }) {
   if (error) {
     return (
       <div className="daily-card daily-card--error">
         <div className="daily-card-tag">{displayName}</div>
         <div className="daily-card-error-msg" role="alert">⚠ Failed to load – try refreshing</div>
+        <div className="daily-card-actions">
+          <button
+            className="daily-refresh-btn"
+            onClick={onRefresh}
+            disabled={refreshing}
+          >
+            🔄 Refresh
+          </button>
+        </div>
       </div>
     );
   }
@@ -41,6 +73,15 @@ function ProblemCard({ displayName, problem, error }) {
       <div className="daily-card daily-card--empty">
         <div className="daily-card-tag">{displayName}</div>
         <div className="daily-card-empty-msg">No eligible problems found</div>
+        <div className="daily-card-actions">
+          <button
+            className="daily-refresh-btn"
+            onClick={onRefresh}
+            disabled={refreshing}
+          >
+            🔄 Refresh
+          </button>
+        </div>
       </div>
     );
   }
@@ -68,7 +109,7 @@ function ProblemCard({ displayName, problem, error }) {
           ))}
         </div>
       )}
-      <div className="daily-card-actions">
+      <div className="daily-card-actions" style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
         <a
           href={cfUrl}
           target="_blank"
@@ -77,6 +118,124 @@ function ProblemCard({ displayName, problem, error }) {
         >
           Solve on Codeforces ↗
         </a>
+        <button
+          className="daily-refresh-btn"
+          onClick={onRefresh}
+          disabled={refreshing}
+          title="Get a different problem from this category"
+        >
+          🔄
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function CategorySelector({ selectedTags, onTagsChange, availableTags }) {
+  const [isEditing, setIsEditing] = useState(false);
+  const [tempSelection, setTempSelection] = useState(selectedTags);
+
+  const handleToggleTag = (tag) => {
+    if (tempSelection.includes(tag)) {
+      setTempSelection(tempSelection.filter(t => t !== tag));
+    } else {
+      if (tempSelection.length < 5) {
+        setTempSelection([...tempSelection, tag]);
+      }
+    }
+  };
+
+  const handleSave = () => {
+    if (tempSelection.length > 0) {
+      onTagsChange(tempSelection);
+      setIsEditing(false);
+    }
+  };
+
+  const handleCancel = () => {
+    setTempSelection(selectedTags);
+    setIsEditing(false);
+  };
+
+  if (!isEditing) {
+    const selectedNames = selectedTags
+      .map(tag => availableTags.find(t => t.tag === tag)?.displayName || tag)
+      .join(', ');
+
+    return (
+      <div style={{ marginBottom: '1rem' }}>
+        <div style={{ fontSize: '0.85rem', color: 'var(--ik-muted)', marginBottom: '0.5rem' }}>
+          Selected categories: {selectedNames}
+        </div>
+        <button className="daily-refresh-btn" onClick={() => setIsEditing(true)}>
+          ✏️ Change Categories
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <div style={{
+      marginBottom: '1.5rem',
+      padding: '1rem',
+      backgroundColor: 'var(--ik-surface)',
+      border: '1px solid var(--ik-border)',
+      borderRadius: 'var(--ik-radius-sm)'
+    }}>
+      <div style={{ marginBottom: '0.75rem', fontSize: '0.9rem', fontWeight: '600', color: 'var(--ik-text)' }}>
+        Select up to 5 categories ({tempSelection.length}/5):
+      </div>
+      <div style={{
+        display: 'grid',
+        gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))',
+        gap: '0.5rem',
+        marginBottom: '1rem'
+      }}>
+        {availableTags.map(({ tag, displayName }) => {
+          const isSelected = tempSelection.includes(tag);
+          return (
+            <label
+              key={tag}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.5rem',
+                padding: '0.5rem',
+                backgroundColor: isSelected ? 'var(--ik-yellow-dim)' : 'var(--ik-card)',
+                border: `1px solid ${isSelected ? 'var(--ik-yellow)' : 'var(--ik-border)'}`,
+                borderRadius: '4px',
+                cursor: 'pointer',
+                fontSize: '0.85rem',
+                transition: 'all 0.15s'
+              }}
+            >
+              <input
+                type="checkbox"
+                checked={isSelected}
+                onChange={() => handleToggleTag(tag)}
+                disabled={!isSelected && tempSelection.length >= 5}
+              />
+              <span style={{ color: 'var(--ik-text)' }}>{displayName}</span>
+            </label>
+          );
+        })}
+      </div>
+      <div style={{ display: 'flex', gap: '0.5rem' }}>
+        <button
+          className="daily-refresh-btn"
+          onClick={handleSave}
+          disabled={tempSelection.length === 0}
+          style={{
+            backgroundColor: 'var(--ik-yellow)',
+            color: '#1a1a1a',
+            borderColor: 'var(--ik-yellow)'
+          }}
+        >
+          ✓ Save Selection
+        </button>
+        <button className="daily-refresh-btn" onClick={handleCancel}>
+          Cancel
+        </button>
       </div>
     </div>
   );
@@ -84,15 +243,18 @@ function ProblemCard({ displayName, problem, error }) {
 
 function DailyProblems() {
   const [handle] = useState(loadHandle);
+  const [selectedTags, setSelectedTags] = useState(loadSelectedTags);
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [offsets, setOffsets] = useState({});
+  const [refreshingTag, setRefreshingTag] = useState(null);
 
-  const load = useCallback(async () => {
+  const load = useCallback(async (tagsToLoad = selectedTags, offsetsToUse = {}) => {
     setLoading(true);
     setError(null);
     try {
-      const results = await fetchAllDailyProblems(handle || null);
+      const results = await fetchAllDailyProblems(handle || null, tagsToLoad, offsetsToUse);
       setItems(results);
     } catch (err) {
       console.error('[DailyProblems] Load failed:', err);
@@ -100,11 +262,33 @@ function DailyProblems() {
     } finally {
       setLoading(false);
     }
-  }, [handle]);
+  }, [handle, selectedTags]);
 
   useEffect(() => {
     load();
   }, [load]);
+
+  const handleTagsChange = (newTags) => {
+    setSelectedTags(newTags);
+    saveSelectedTags(newTags);
+    setOffsets({});
+    load(newTags, {});
+  };
+
+  const handleRefreshSingle = async (tag) => {
+    setRefreshingTag(tag);
+    const newOffsets = { ...offsets, [tag]: (offsets[tag] || 0) + 1 };
+    setOffsets(newOffsets);
+
+    try {
+      const results = await fetchAllDailyProblems(handle || null, selectedTags, newOffsets);
+      setItems(results);
+    } catch (err) {
+      console.error(`[DailyProblems] Refresh failed for tag "${tag}":`, err);
+    } finally {
+      setRefreshingTag(null);
+    }
+  };
 
   return (
     <div className="daily-container">
@@ -119,12 +303,22 @@ function DailyProblems() {
               to get personalised problems.
             </p>
           )}
+
+          <CategorySelector
+            selectedTags={selectedTags}
+            onTagsChange={handleTagsChange}
+            availableTags={CF_TAGS}
+          />
+
           <button
             className="daily-refresh-btn"
-            onClick={load}
+            onClick={() => {
+              setOffsets({});
+              load(selectedTags, {});
+            }}
             disabled={loading}
           >
-            🔄 Refresh
+            🔄 Refresh All
           </button>
         </div>
 
@@ -135,7 +329,14 @@ function DailyProblems() {
         ) : (
           <div className="daily-grid">
             {items.map(({ tag, displayName, problem, error: tagError }) => (
-              <ProblemCard key={tag} displayName={displayName} problem={problem} error={tagError} />
+              <ProblemCard
+                key={tag}
+                displayName={displayName}
+                problem={problem}
+                error={tagError}
+                onRefresh={() => handleRefreshSingle(tag)}
+                refreshing={refreshingTag === tag}
+              />
             ))}
           </div>
         )}
