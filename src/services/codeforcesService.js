@@ -289,6 +289,34 @@ export async function fetchProblemsByTag(tag) {
 }
 
 /**
+ * Select one daily problem from a pool of candidate problems.
+ * Filters by rating range and solved set, picks deterministically by UTC date.
+ * Returns the chosen problem, or null if no eligible problems found.
+ */
+function pickDailyProblem(problems, userRating, solvedIds) {
+  const eligible = problems
+    .filter(p =>
+      p.rating != null &&
+      p.rating >= userRating - 100 &&
+      p.rating <= userRating + 300 &&
+      !solvedIds.has(`${p.contestId}${p.index}`)
+    )
+    .sort((a, b) => b.contestId - a.contestId)
+    .slice(0, 20);
+
+  if (!eligible.length) return null;
+
+  // Build a numeric seed from the UTC calendar date (YYYYMMDD) so every user
+  // sees the same problem on the same calendar day regardless of time zone.
+  const today = new Date();
+  const dateSeed =
+    today.getUTCFullYear() * 10000 +
+    (today.getUTCMonth() + 1) * 100 +
+    today.getUTCDate();
+  return eligible[dateSeed % eligible.length];
+}
+
+/**
  * Pick one "daily" problem for a given tag, personalised to the user.
  *
  * Algorithm:
@@ -303,27 +331,7 @@ export async function fetchProblemsByTag(tag) {
  */
 export async function getDailyProblem(tag, userRating, solvedIds) {
   const { tagIndex } = await fetchFullProblemset();
-  const problems = tagIndex.get(tag) ?? [];
-
-  const eligible = problems
-    .filter(p =>
-      p.rating != null &&
-      p.rating >= userRating - 100 &&
-      p.rating <= userRating + 300 &&
-      !solvedIds.has(`${p.contestId}${p.index}`)
-    )
-    .sort((a, b) => b.contestId - a.contestId)
-    .slice(0, 20);
-
-  if (!eligible.length) return null;
-
-  const today = new Date();
-  const dateSeed =
-    today.getUTCFullYear() * 10000 +
-    (today.getUTCMonth() + 1) * 100 +
-    today.getUTCDate();
-  const dayIndex = dateSeed % eligible.length;
-  return eligible[dayIndex];
+  return pickDailyProblem(tagIndex.get(tag) ?? [], userRating, solvedIds);
 }
 
 /**
@@ -355,25 +363,7 @@ export async function fetchAllDailyProblems(handle) {
   const { tagIndex } = _problemsetCache;
   return CF_TAGS.map(({ tag, displayName }) => {
     try {
-      const problems = tagIndex.get(tag) ?? [];
-      const eligible = problems
-        .filter(p =>
-          p.rating != null &&
-          p.rating >= userRating - 100 &&
-          p.rating <= userRating + 300 &&
-          !solvedIds.has(`${p.contestId}${p.index}`)
-        )
-        .sort((a, b) => b.contestId - a.contestId)
-        .slice(0, 20);
-
-      if (!eligible.length) return { tag, displayName, problem: null };
-
-      const today = new Date();
-      const dateSeed =
-        today.getUTCFullYear() * 10000 +
-        (today.getUTCMonth() + 1) * 100 +
-        today.getUTCDate();
-      const problem = eligible[dateSeed % eligible.length];
+      const problem = pickDailyProblem(tagIndex.get(tag) ?? [], userRating, solvedIds);
       return { tag, displayName, problem };
     } catch (err) {
       console.error(`[daily] Failed to filter tag "${tag}":`, err.message);
