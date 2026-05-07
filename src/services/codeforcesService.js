@@ -174,6 +174,75 @@ function cfApiUrl(method, params = {}) {
   return `/api/cf/${method}${query}`;
 }
 
+// ---------------------------------------------------------------------------
+// Full problemset cache
+// The entire CF problemset is fetched once per session and refreshed after TTL.
+// ---------------------------------------------------------------------------
+
+const PROBLEMSET_TTL_MS = 60 * 60 * 1000; // 1 hour
+
+const _problemsetCache = {
+  problems: null,    // Array of { contestId, index, name, rating, tags }
+  tagIndex: null,    // Map<tag, problem[]>
+  statistics: null,  // Map<"contestIdIndex", solvedCount>
+  fetchedAt: 0,
+};
+
+/**
+ * Fetch the full CF problemset once per TTL and cache it in memory.
+ * Builds problems[], a tagIndex map, and a statistics map.
+ * Returns the populated cache object.
+ */
+async function fetchFullProblemset() {
+  const now = Date.now();
+  if (_problemsetCache.problems && now - _problemsetCache.fetchedAt < PROBLEMSET_TTL_MS) {
+    return _problemsetCache;
+  }
+
+  const res = await fetch(cfApiUrl('problemset.problems'));
+  if (!res.ok) {
+    throw new Error(`HTTP ${res.status} fetching full problemset`);
+  }
+  const data = await res.json();
+  if (data.status !== 'OK') {
+    throw new Error(`CF API error: ${data.comment || data.error || 'Unknown error'}`);
+  }
+
+  const problems = (data.result?.problems ?? []).map(p => ({
+    contestId: p.contestId,
+    index: p.index,
+    name: p.name,
+    rating: p.rating,
+    tags: p.tags,
+  }));
+
+  // Map "contestIdIndex" -> solvedCount
+  const statistics = new Map();
+  for (const s of (data.result?.problemStatistics ?? [])) {
+    statistics.set(`${s.contestId}${s.index}`, s.solvedCount);
+  }
+
+  // Build tag -> problem[] index
+  const tagIndex = new Map();
+  for (const p of problems) {
+    for (const t of (p.tags ?? [])) {
+      if (!tagIndex.has(t)) tagIndex.set(t, []);
+      tagIndex.get(t).push(p);
+    }
+  }
+
+  _problemsetCache.problems = problems;
+  _problemsetCache.tagIndex = tagIndex;
+  _problemsetCache.statistics = statistics;
+  _problemsetCache.fetchedAt = now;
+
+  if (import.meta.env.DEV) {
+    console.log(`[Codeforces] Cached ${problems.length} problems across ${tagIndex.size} tags`);
+  }
+
+  return _problemsetCache;
+}
+
 /**
  * Fetch user info (rating) for a CF handle.
  * Returns { rating: number } or null on failure.
@@ -211,43 +280,20 @@ export async function fetchUserSolvedIds(handle) {
 }
 
 /**
- * Fetch problems for a given tag from the CF problemset.
+ * Fetch problems for a given tag from the cached full problemset.
  * Returns array of problem objects: { contestId, index, name, rating, tags }
- * Throws an error if the HTTP response is not OK or the API returns a non-OK status.
  */
 export async function fetchProblemsByTag(tag) {
-  const res = await fetch(cfApiUrl('problemset.problems', { tags: tag }));
-  if (!res.ok) {
-    throw new Error(`HTTP ${res.status} fetching problems for tag "${tag}"`);
-  }
-  const data = await res.json();
-  if (data.status !== 'OK') {
-    throw new Error(`CF API error for tag "${tag}": ${data.comment || data.error || 'Unknown error'}`);
-  }
-  return (data.result?.problems ?? []).map(p => ({
-    contestId: p.contestId,
-    index: p.index,
-    name: p.name,
-    rating: p.rating,
-    tags: p.tags,
-  }));
+  const { tagIndex } = await fetchFullProblemset();
+  return tagIndex.get(tag) ?? [];
 }
 
 /**
- * Pick one "daily" problem for a given tag, personalised to the user.
- *
- * Algorithm:
- * 1. Filter problems to those with rating in [userRating - 100, userRating + 300].
- * 2. Exclude problems already solved by the user.
- * 3. Prefer problems from recent contests (sort by contestId descending).
- * 4. From the top 20 eligible candidates, pick one deterministically using:
- *      index = Math.floor(Date.now() / 86400000) % candidates.length
- *    so it rotates daily but is stable within the same day.
- * 5. Return the chosen problem, or null if no eligible problems found.
+ * Select one daily problem from a pool of candidate problems.
+ * Filters by rating range and solved set, picks deterministically by UTC date.
+ * Returns the chosen problem, or null if no eligible problems found.
  */
-export async function getDailyProblem(tag, userRating, solvedIds) {
-  const problems = await fetchProblemsByTag(tag);
-
+function pickDailyProblem(problems, userRating, solvedIds) {
   const eligible = problems
     .filter(p =>
       p.rating != null &&
@@ -267,57 +313,61 @@ export async function getDailyProblem(tag, userRating, solvedIds) {
     today.getUTCFullYear() * 10000 +
     (today.getUTCMonth() + 1) * 100 +
     today.getUTCDate();
-  const dayIndex = dateSeed % eligible.length;
-  return eligible[dayIndex];
+  return eligible[dateSeed % eligible.length];
 }
 
 /**
- * Run an array of async task functions with at most `concurrency` running at
- * a time, inserting a `delayMs` pause between batches to avoid rate-limit bursts.
+ * Pick one "daily" problem for a given tag, personalised to the user.
+ *
+ * Algorithm:
+ * 1. Look up problems for the tag in the cached tagIndex (no extra API call).
+ * 2. Filter problems to those with rating in [userRating - 100, userRating + 300].
+ * 3. Exclude problems already solved by the user.
+ * 4. Prefer problems from recent contests (sort by contestId descending).
+ * 5. From the top 20 eligible candidates, pick one deterministically using
+ *    a seed derived from the UTC calendar date (YYYYMMDD) so every user sees
+ *    the same problem on the same calendar day regardless of time zone.
+ * 6. Return the chosen problem, or null if no eligible problems found.
  */
-async function batchedPromiseAll(tasks, concurrency = 3, delayMs = 300) {
-  const results = [];
-  for (let i = 0; i < tasks.length; i += concurrency) {
-    const batch = tasks.slice(i, i + concurrency);
-    const batchResults = await Promise.all(batch.map(fn => fn()));
-    results.push(...batchResults);
-    if (i + concurrency < tasks.length) {
-      await new Promise(resolve => setTimeout(resolve, delayMs));
-    }
-  }
-  return results;
+export async function getDailyProblem(tag, userRating, solvedIds) {
+  const { tagIndex } = await fetchFullProblemset();
+  return pickDailyProblem(tagIndex.get(tag) ?? [], userRating, solvedIds);
 }
 
 /**
  * Fetch daily problems for all tags.
  * Returns an array of { tag, displayName, problem, error? } objects.
  * problem may be null for tags with no eligible problems.
- * error is true when the fetch itself failed (network error, rate limit, etc.).
+ * error is true when the initial fetch failed (network error, rate limit, etc.).
  *
- * If handle is null/empty, skip solved-filtering and use a default rating of 1200.
+ * Makes exactly one call to problemset.problems (cached for the session), plus
+ * separate calls to user.info and user.status when a handle is provided.
+ * If handle is null/empty, solved-filtering is skipped and rating defaults to 1200.
  */
 export async function fetchAllDailyProblems(handle) {
   let userRating = 1200;
   let solvedIds = new Set();
 
-  if (handle) {
-    const [info, solved] = await Promise.all([
-      fetchUserInfo(handle),
-      fetchUserSolvedIds(handle),
-    ]);
-    if (info) userRating = info.rating;
-    solvedIds = solved;
-  }
+  // Fetch the full problemset and user data concurrently.
+  // fetchFullProblemset returns immediately from cache on subsequent calls.
+  const [, info, solved] = await Promise.all([
+    fetchFullProblemset(),
+    handle ? fetchUserInfo(handle) : Promise.resolve(null),
+    handle ? fetchUserSolvedIds(handle) : Promise.resolve(new Set()),
+  ]);
 
-  const tasks = CF_TAGS.map(({ tag, displayName }) => async () => {
+  if (info) userRating = info.rating;
+  if (solved) solvedIds = solved;
+
+  // All filtering is now local – no per-tag network calls needed.
+  const { tagIndex } = _problemsetCache;
+  return CF_TAGS.map(({ tag, displayName }) => {
     try {
-      const problem = await getDailyProblem(tag, userRating, solvedIds);
+      const problem = pickDailyProblem(tagIndex.get(tag) ?? [], userRating, solvedIds);
       return { tag, displayName, problem };
     } catch (err) {
-      console.error(`[daily] Failed to load tag "${tag}":`, err.message);
+      console.error(`[daily] Failed to filter tag "${tag}":`, err.message);
       return { tag, displayName, problem: null, error: true };
     }
   });
-
-  return batchedPromiseAll(tasks, 3, 300);
 }
