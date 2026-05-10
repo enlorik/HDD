@@ -46,6 +46,12 @@ function ProblemCard({ displayName, problem, error }) {
   }
 
   const cfUrl = `https://codeforces.com/problemset/problem/${problem.contestId}/${problem.index}`;
+  const workspaceParams = new URLSearchParams({
+    name: problem.name || '',
+    ...(problem.rating ? { rating: String(problem.rating) } : {}),
+    ...(problem.tags?.length ? { tags: problem.tags.join(',') } : {}),
+  });
+  const workspaceUrl = `/problem/${problem.contestId}/${problem.index}?${workspaceParams.toString()}`;
 
   return (
     <div className="daily-card">
@@ -69,13 +75,20 @@ function ProblemCard({ displayName, problem, error }) {
         </div>
       )}
       <div className="daily-card-actions">
+        <Link
+          to={workspaceUrl}
+          state={{ problem }}
+          className="daily-workspace-btn"
+        >
+          Open Workspace
+        </Link>
         <a
           href={cfUrl}
           target="_blank"
           rel="noopener noreferrer"
-          className="daily-solve-btn"
+          className="daily-solve-link"
         >
-          Solve on Codeforces ↗
+          Codeforces ↗
         </a>
       </div>
     </div>
