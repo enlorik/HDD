@@ -174,6 +174,10 @@ function cfApiUrl(method, params = {}) {
   return `/api/cf/${method}${query}`;
 }
 
+function getProblemKey(problem) {
+  return `${problem.contestId}-${problem.index}`;
+}
+
 // ---------------------------------------------------------------------------
 // Full problemset cache
 // The entire CF problemset is fetched once per session and refreshed after TTL.
@@ -184,13 +188,12 @@ const PROBLEMSET_TTL_MS = 60 * 60 * 1000; // 1 hour
 const _problemsetCache = {
   problems: null,    // Array of { contestId, index, name, rating, tags }
   tagIndex: null,    // Map<tag, problem[]>
-  statistics: null,  // Map<"contestIdIndex", solvedCount>
   fetchedAt: 0,
 };
 
 /**
  * Fetch the full CF problemset once per TTL and cache it in memory.
- * Builds problems[], a tagIndex map, and a statistics map.
+ * Builds problems[] and a tagIndex map.
  * Returns the populated cache object.
  */
 async function fetchFullProblemset() {
@@ -216,12 +219,6 @@ async function fetchFullProblemset() {
     tags: p.tags,
   }));
 
-  // Map "contestIdIndex" -> solvedCount
-  const statistics = new Map();
-  for (const s of (data.result?.problemStatistics ?? [])) {
-    statistics.set(`${s.contestId}${s.index}`, s.solvedCount);
-  }
-
   // Build tag -> problem[] index
   const tagIndex = new Map();
   for (const p of problems) {
@@ -233,7 +230,6 @@ async function fetchFullProblemset() {
 
   _problemsetCache.problems = problems;
   _problemsetCache.tagIndex = tagIndex;
-  _problemsetCache.statistics = statistics;
   _problemsetCache.fetchedAt = now;
 
   if (import.meta.env.DEV) {
@@ -260,7 +256,7 @@ export async function fetchUserInfo(handle) {
 
 /**
  * Fetch all problem IDs the user has solved (AC submissions).
- * Returns a Set of strings like "1234A", "567B".
+ * Returns a Set of strings like "1234-A", "567-B".
  */
 export async function fetchUserSolvedIds(handle) {
   try {
@@ -270,7 +266,7 @@ export async function fetchUserSolvedIds(handle) {
     const solved = new Set();
     for (const sub of data.result) {
       if (sub.verdict === 'OK' && sub.problem) {
-        solved.add(`${sub.problem.contestId}${sub.problem.index}`);
+        solved.add(getProblemKey(sub.problem));
       }
     }
     return solved;
@@ -299,7 +295,7 @@ function pickDailyProblem(problems, userRating, solvedIds) {
       p.rating != null &&
       p.rating >= userRating - 100 &&
       p.rating <= userRating + 300 &&
-      !solvedIds.has(`${p.contestId}${p.index}`)
+      !solvedIds.has(getProblemKey(p))
     )
     .sort((a, b) => b.contestId - a.contestId)
     .slice(0, 20);
@@ -350,17 +346,26 @@ export async function fetchAllDailyProblems(handle) {
 
   // Fetch the full problemset and user data concurrently.
   // fetchFullProblemset returns immediately from cache on subsequent calls.
-  const [, info, solved] = await Promise.all([
+  const [problemsetResult, infoResult, solvedResult] = await Promise.allSettled([
     fetchFullProblemset(),
     handle ? fetchUserInfo(handle) : Promise.resolve(null),
     handle ? fetchUserSolvedIds(handle) : Promise.resolve(new Set()),
   ]);
 
-  if (info) userRating = info.rating;
-  if (solved) solvedIds = solved;
+  if (problemsetResult.status !== 'fulfilled') {
+    console.error('[daily] Failed to fetch full problemset:', problemsetResult.reason);
+    return CF_TAGS.map(({ tag, displayName }) => ({ tag, displayName, problem: null, error: true }));
+  }
+
+  if (infoResult.status === 'fulfilled' && infoResult.value) {
+    userRating = infoResult.value.rating;
+  }
+  if (solvedResult.status === 'fulfilled' && solvedResult.value) {
+    solvedIds = solvedResult.value;
+  }
 
   // All filtering is now local – no per-tag network calls needed.
-  const { tagIndex } = _problemsetCache;
+  const { tagIndex } = problemsetResult.value;
   return CF_TAGS.map(({ tag, displayName }) => {
     try {
       const problem = pickDailyProblem(tagIndex.get(tag) ?? [], userRating, solvedIds);
