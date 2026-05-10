@@ -174,7 +174,7 @@ function cfApiUrl(method, params = {}) {
   return `/api/cf/${method}${query}`;
 }
 
-function getProblemKey(problem) {
+export function getProblemKey(problem) {
   return `${problem.contestId}-${problem.index}`;
 }
 
@@ -289,7 +289,7 @@ export async function fetchProblemsByTag(tag) {
  * Filters by rating range and solved set, picks deterministically by UTC date.
  * Returns the chosen problem, or null if no eligible problems found.
  */
-function pickDailyProblem(problems, userRating, solvedIds) {
+export function pickDailyProblem(problems, userRating, solvedIds) {
   const eligible = problems
     .filter(p =>
       p.rating != null &&
