@@ -1,21 +1,12 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useLocation, useParams } from 'react-router-dom';
-import { getDraftStorageKey } from '../utils/problemWorkspace';
+import {
+  getDraftStorageKey,
+  parseProblemWorkspaceQuery,
+} from '../utils/problemWorkspace';
 import './ProblemWorkspace.css';
 
 const DEFAULT_PLACEHOLDER = 'fun main() {\n\n}';
-
-function parseQueryProblem(search) {
-  const params = new URLSearchParams(search);
-  const rating = params.get('rating');
-  const tags = params.get('tags');
-
-  return {
-    name: params.get('name') || '',
-    rating: rating ? Number(rating) : null,
-    tags: tags ? tags.split(',').map(tag => tag.trim()).filter(Boolean) : [],
-  };
-}
 
 function loadDraft(storageKey) {
   try {
@@ -31,7 +22,7 @@ function ProblemWorkspace() {
 
   const problemDetails = useMemo(() => {
     const stateProblem = location.state?.problem ?? {};
-    const queryProblem = parseQueryProblem(location.search);
+    const queryProblem = parseProblemWorkspaceQuery(location.search);
 
     return {
       name: stateProblem.name || queryProblem.name,
@@ -54,8 +45,8 @@ function ProblemWorkspace() {
   useEffect(() => {
     try {
       localStorage.setItem(storageKey, code);
-    } catch {
-      console.error('Failed to save Codeforces draft');
+    } catch (error) {
+      console.error('Failed to save Codeforces draft:', error);
     }
   }, [code, storageKey]);
 
