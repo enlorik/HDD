@@ -65,7 +65,7 @@ function ProblemWorkspace() {
           </div>
 
           <div className="problem-workspace-meta">
-            {problemDetails.rating && (
+            {problemDetails.rating != null && (
               <span className="problem-workspace-badge">
                 Rating {problemDetails.rating}
               </span>

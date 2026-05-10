@@ -9,7 +9,7 @@ export function buildProblemWorkspaceUrl(problem) {
     params.set('name', problem.name);
   }
 
-  if (problem.rating) {
+  if (problem.rating != null) {
     params.set('rating', String(problem.rating));
   }
 
@@ -30,7 +30,7 @@ export function parseProblemWorkspaceQuery(search) {
 
   return {
     name: params.get('name') || '',
-    rating: rating ? Number(rating) : null,
+    rating: rating != null ? Number(rating) : null,
     tags: tags ? tags.split(',').map(tag => tag.trim()).filter(Boolean) : [],
   };
 }

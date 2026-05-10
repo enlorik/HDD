@@ -23,12 +23,34 @@ describe('problemWorkspace helpers', () => {
     ).toBe('/problem/2050/C1?name=Interesting+Problem&rating=1700&tags=dp%2Cgreedy');
   });
 
+  it('preserves rating 0 when building workspace URLs', () => {
+    expect(
+      buildProblemWorkspaceUrl({
+        contestId: 2050,
+        index: 'C1',
+        name: 'Interesting Problem',
+        rating: 0,
+        tags: ['dp', 'greedy'],
+      }),
+    ).toBe('/problem/2050/C1?name=Interesting+Problem&rating=0&tags=dp%2Cgreedy');
+  });
+
   it('parses workspace metadata from the query string', () => {
     expect(
       parseProblemWorkspaceQuery('?name=Interesting+Problem&rating=1700&tags=dp%2Cgreedy'),
     ).toEqual({
       name: 'Interesting Problem',
       rating: 1700,
+      tags: ['dp', 'greedy'],
+    });
+  });
+
+  it('parses rating 0 from query string as number 0', () => {
+    expect(
+      parseProblemWorkspaceQuery('?name=Interesting+Problem&rating=0&tags=dp%2Cgreedy'),
+    ).toEqual({
+      name: 'Interesting Problem',
+      rating: 0,
       tags: ['dp', 'greedy'],
     });
   });
