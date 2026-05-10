@@ -157,9 +157,16 @@
   padding: 1px 6px;
 }
 
-.daily-card-actions { margin-top: auto; padding-top: 0.25rem; }
+.daily-card-actions {
+  margin-top: auto;
+  padding-top: 0.25rem;
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  flex-wrap: wrap;
+}
 
-.daily-solve-btn {
+.daily-workspace-btn {
   display: inline-block;
   font-family: var(--ik-sans);
   font-size: 0.8rem;
@@ -173,10 +180,19 @@
   cursor: pointer;
   transition: all 0.15s;
 }
-.daily-solve-btn:hover {
+.daily-workspace-btn:hover {
   background-color: #fff;
   color: #1a1a1a;
   box-shadow: 0 4px 14px var(--ik-yellow-glow);
+}
+
+.daily-solve-link {
+  font-size: 0.78rem;
+  color: var(--ik-muted);
+}
+
+.daily-solve-link:hover {
+  color: var(--ik-cf);
 }
 
 /* empty / error states */

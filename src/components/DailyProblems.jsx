@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { fetchAllDailyProblems } from '../services/codeforcesService';
+import { buildProblemWorkspaceUrl } from '../utils/problemWorkspace';
 import './DailyProblems.css';
 
 const STORAGE_KEY = 'hdd-user-profile';
@@ -46,6 +47,7 @@ function ProblemCard({ displayName, problem, error }) {
   }
 
   const cfUrl = `https://codeforces.com/problemset/problem/${problem.contestId}/${problem.index}`;
+  const workspaceUrl = buildProblemWorkspaceUrl(problem);
 
   return (
     <div className="daily-card">
@@ -69,13 +71,20 @@ function ProblemCard({ displayName, problem, error }) {
         </div>
       )}
       <div className="daily-card-actions">
+        <Link
+          to={workspaceUrl}
+          state={{ problem }}
+          className="daily-workspace-btn"
+        >
+          Open Workspace
+        </Link>
         <a
           href={cfUrl}
           target="_blank"
           rel="noopener noreferrer"
-          className="daily-solve-btn"
+          className="daily-solve-link"
         >
-          Solve on Codeforces ↗
+          Codeforces ↗
         </a>
       </div>
     </div>

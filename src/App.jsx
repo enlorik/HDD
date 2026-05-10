@@ -3,6 +3,7 @@ import Timeline from './components/Timeline'
 import Bounty from './components/Bounty'
 import DailyProblems from './components/DailyProblems'
 import Profile from './components/Profile'
+import ProblemWorkspace from './components/ProblemWorkspace'
 import './App.css'
 
 function Navigation() {
@@ -52,6 +53,7 @@ function App() {
           <Route path="/" element={<Timeline />} />
           <Route path="/bounty" element={<Bounty />} />
           <Route path="/daily" element={<DailyProblems />} />
+          <Route path="/problem/:contestId/:index" element={<ProblemWorkspace />} />
           <Route path="/profile" element={<Profile />} />
         </Routes>
       </div>
