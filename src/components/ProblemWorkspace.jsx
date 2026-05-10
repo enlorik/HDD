@@ -58,7 +58,7 @@ function ProblemWorkspace() {
         <aside className="problem-workspace-panel problem-workspace-panel--info">
           <div className="problem-workspace-section-label">Codeforces Problem</div>
           <h1 className="problem-workspace-title">
-            {problemDetails.name || `${contestId}${index}`}
+            {problemDetails.name || `${contestId} ${index}`}
           </h1>
           <div className="problem-workspace-problem-id">
             {contestId} {index}
