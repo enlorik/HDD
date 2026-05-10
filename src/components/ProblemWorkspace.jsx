@@ -121,7 +121,7 @@ function ProblemWorkspace() {
               onChange={event => setCode(event.target.value)}
               placeholder={DEFAULT_PLACEHOLDER}
               spellCheck="false"
-              aria-label="Kotlin editor placeholder"
+              aria-label="Kotlin code editor"
             />
           </div>
 
