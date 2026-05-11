@@ -11,6 +11,7 @@ import fs from 'fs';
 import https from 'https';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { parseCFProblemStatement } from './cfStatementParser.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const app = express();
@@ -52,6 +53,66 @@ function rateLimit(req, res, next) {
 // Serve static assets produced by `npm run build`
 // ---------------------------------------------------------------------------
 app.use(express.static(DIST_DIR));
+
+// ---------------------------------------------------------------------------
+// Problem statement: GET /api/cf/problem/:contestId/:index/statement
+// Fetches the Codeforces problem page server-side, parses it with cheerio,
+// and returns structured plain-text fields – no raw HTML is forwarded.
+// ---------------------------------------------------------------------------
+app.get('/api/cf/problem/:contestId/:index/statement', rateLimit, (req, res) => {
+  const { contestId, index } = req.params;
+
+  if (!/^\d+$/.test(contestId)) {
+    return res.status(400).json({ error: 'Invalid contestId: must be numeric.' });
+  }
+  if (!/^[a-zA-Z0-9]+$/.test(index)) {
+    return res.status(400).json({ error: 'Invalid index: must be alphanumeric (e.g. A, B, C1).' });
+  }
+
+  const cfPath = `/problemset/problem/${contestId}/${index}`;
+  const options = {
+    hostname: CF_BASE,
+    path: cfPath,
+    headers: {
+      'User-Agent': 'Mozilla/5.0 (compatible; HDD-App/1.0)',
+      Accept: 'text/html',
+    },
+  };
+
+  let rawHtml = '';
+
+  const request = https.get(options, (cfRes) => {
+    if (cfRes.statusCode !== 200) {
+      res.status(502).json({ error: `Codeforces returned HTTP ${cfRes.statusCode}` });
+      cfRes.resume();
+      return;
+    }
+
+    cfRes.setEncoding('utf-8');
+    cfRes.on('data', chunk => { rawHtml += chunk; });
+    cfRes.on('end', () => {
+      const parsed = parseCFProblemStatement(rawHtml);
+      if (!parsed) {
+        return res.status(404).json({ error: 'Problem statement not found on Codeforces page.' });
+      }
+      res.json(parsed);
+    });
+  });
+
+  request.on('error', (err) => {
+    console.error('[statement] Codeforces request failed:', err.message);
+    res.status(502).json({ error: 'Failed to reach Codeforces.' });
+  });
+
+  request.setTimeout(15000, () => {
+    request.destroy();
+    if (!res.headersSent) {
+      res.status(504).json({ error: 'Codeforces request timed out.' });
+    } else {
+      res.end();
+    }
+  });
+});
 
 // ---------------------------------------------------------------------------
 // Proxy: GET /api/cf/:method
