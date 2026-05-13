@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { useLocation, useParams } from 'react-router-dom';
 import { fetchProblemStatement } from '../services/cfStatement';
 import {
@@ -42,6 +42,8 @@ function ProblemWorkspace() {
 
   const [code, setCode] = useState(() => loadDraft(storageKey));
   const [hasEdited, setHasEdited] = useState(false);
+  const editorRef = useRef(null);
+  const pendingCaretRef = useRef(null);
 
   // Statement fetch state
   const [stmtStatus, setStmtStatus] = useState('idle'); // 'idle' | 'loading' | 'ok' | 'error'
@@ -51,34 +53,36 @@ function ProblemWorkspace() {
   useEffect(() => {
     if (!contestId || !index) return;
     let cancelled = false;
-    queueMicrotask(() => {
-      if (cancelled) return;
+
+    async function loadStatement() {
       setStmtStatus('loading');
       setStatement(null);
       setStmtError('');
-      fetchProblemStatement(contestId, index)
-        .then(data => {
-          if (!cancelled) {
-            setStatement(data);
-            setStmtStatus('ok');
-          }
-        })
-        .catch(err => {
-          if (!cancelled) {
-            setStmtError(err.message || 'Failed to load statement.');
-            setStmtStatus('error');
-          }
-        });
-    });
+      try {
+        const data = await fetchProblemStatement(contestId, index);
+        if (!cancelled) {
+          setStatement(data);
+          setStmtStatus('ok');
+        }
+      } catch (err) {
+        if (!cancelled) {
+          setStmtError(err.message || 'Failed to load statement.');
+          setStmtStatus('error');
+        }
+      }
+    }
+
+    loadStatement();
     return () => { cancelled = true; };
   }, [contestId, index]);
 
   useEffect(() => {
-    const nextDraft = loadDraft(storageKey);
-    queueMicrotask(() => {
-      setCode(nextDraft);
+    function syncDraft() {
+      setCode(loadDraft(storageKey));
       setHasEdited(false);
-    });
+    }
+
+    syncDraft();
   }, [storageKey]);
 
   useEffect(() => {
@@ -88,6 +92,16 @@ function ProblemWorkspace() {
       console.error('Failed to save Codeforces draft:', error);
     }
   }, [code, storageKey]);
+
+  useLayoutEffect(() => {
+    if (pendingCaretRef.current === null || !editorRef.current) {
+      return;
+    }
+
+    editorRef.current.selectionStart = pendingCaretRef.current;
+    editorRef.current.selectionEnd = pendingCaretRef.current;
+    pendingCaretRef.current = null;
+  }, [code]);
 
   const handleEditorChange = event => {
     setCode(event.target.value);
@@ -109,10 +123,7 @@ function ProblemWorkspace() {
     setCode(nextCode);
     setHasEdited(true);
 
-    requestAnimationFrame(() => {
-      editor.selectionStart = start + spaces.length;
-      editor.selectionEnd = start + spaces.length;
-    });
+    pendingCaretRef.current = start + spaces.length;
   };
 
   const handleResetDraft = () => {
@@ -275,13 +286,16 @@ function ProblemWorkspace() {
               <div className="problem-workspace-editor-heading">
                 <h2>Kotlin</h2>
                 <span className="problem-workspace-language-badge">.kt</span>
-                <span className="problem-workspace-editor-problem-id">
+                <span
+                  className="problem-workspace-editor-problem-id"
+                  aria-label={`Problem ${contestId} ${index}`}
+                >
                   {contestId} {index}
                 </span>
               </div>
               <div className="problem-workspace-actions">
                 {hasEdited && (
-                  <span className="problem-workspace-save-status" aria-live="polite">
+                  <span className="problem-workspace-save-status">
                     Saved locally
                   </span>
                 )}
@@ -296,6 +310,7 @@ function ProblemWorkspace() {
             </div>
 
             <textarea
+              ref={editorRef}
               className="problem-workspace-editor"
               value={code}
               onChange={handleEditorChange}
