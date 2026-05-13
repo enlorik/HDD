@@ -27,7 +27,7 @@ export default defineConfig([
     },
   },
   {
-    files: ['server.js'],
+    files: ['server.js', 'cfStatementParser.js', 'cfStatementParser.test.js'],
     languageOptions: {
       globals: globals.node,
     },
