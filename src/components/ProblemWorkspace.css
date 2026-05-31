@@ -156,6 +156,18 @@
   color: var(--ik-muted);
 }
 
+.problem-workspace-placeholder-btn {
+  border: 1px solid var(--ik-border);
+  background: var(--ik-surface);
+  color: var(--ik-muted);
+  border-radius: var(--ik-radius-sm);
+  font-size: 0.78rem;
+  font-weight: 600;
+  padding: 0.35rem 0.68rem;
+  cursor: not-allowed;
+  opacity: 0.65;
+}
+
 .problem-workspace-reset-btn {
   border: 1px solid var(--ik-border);
   background: var(--ik-surface);

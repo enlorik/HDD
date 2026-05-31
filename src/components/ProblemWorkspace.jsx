@@ -301,6 +301,20 @@ function ProblemWorkspace() {
                 )}
                 <button
                   type="button"
+                  className="problem-workspace-placeholder-btn"
+                  disabled
+                >
+                  Run Samples
+                </button>
+                <button
+                  type="button"
+                  className="problem-workspace-placeholder-btn"
+                  disabled
+                >
+                  Prepare Submit
+                </button>
+                <button
+                  type="button"
                   className="problem-workspace-reset-btn"
                   onClick={handleResetDraft}
                 >
