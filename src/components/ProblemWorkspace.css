@@ -98,6 +98,12 @@
   color: var(--ik-muted);
 }
 
+.problem-workspace-link--secondary {
+  display: inline-block;
+  margin-top: 0.95rem;
+  opacity: 0.9;
+}
+
 .problem-workspace-link:hover {
   color: var(--ik-cf);
 }
@@ -110,32 +116,86 @@
   margin-bottom: 0.9rem;
 }
 
+.problem-workspace-editor-heading {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  min-width: 0;
+}
+
 .problem-workspace-header h2,
 .problem-workspace-panel--results h2 {
   font-size: 1rem;
 }
 
+.problem-workspace-language-badge {
+  font-size: 0.72rem;
+  color: var(--ik-cf);
+  background: rgba(74, 158, 255, 0.14);
+  border: 1px solid rgba(74, 158, 255, 0.25);
+  border-radius: 999px;
+  padding: 0.1rem 0.42rem;
+  font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+}
+
+.problem-workspace-editor-problem-id {
+  color: var(--ik-muted);
+  font-size: 0.78rem;
+  font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+}
+
 .problem-workspace-actions {
   display: flex;
+  align-items: center;
   gap: 0.6rem;
   flex-wrap: wrap;
 }
 
-.problem-workspace-actions button:disabled {
-  opacity: 0.55;
+.problem-workspace-save-status {
+  font-size: 0.76rem;
+  color: var(--ik-muted);
+}
+
+.problem-workspace-placeholder-btn {
+  border: 1px solid var(--ik-border);
+  background: var(--ik-surface);
+  color: var(--ik-muted);
+  border-radius: var(--ik-radius-sm);
+  font-size: 0.78rem;
+  font-weight: 600;
+  padding: 0.35rem 0.68rem;
   cursor: not-allowed;
+  opacity: 0.65;
+}
+
+.problem-workspace-reset-btn {
+  border: 1px solid var(--ik-border);
+  background: var(--ik-surface);
+  color: var(--ik-text);
+  border-radius: var(--ik-radius-sm);
+  font-size: 0.78rem;
+  font-weight: 600;
+  padding: 0.35rem 0.68rem;
+  cursor: pointer;
+}
+
+.problem-workspace-reset-btn:hover {
+  border-color: var(--ik-cf);
+  color: var(--ik-cf);
 }
 
 .problem-workspace-editor {
   width: 100%;
-  min-height: 430px;
+  min-height: 470px;
   resize: vertical;
   border: 1px solid var(--ik-border);
   border-radius: var(--ik-radius-sm);
-  background: #111111;
+  background: #101216;
   color: var(--ik-text);
   padding: 1rem;
   font: 0.95rem/1.5 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+  tab-size: 4;
+  caret-color: #8fb6ff;
 }
 
 .problem-workspace-editor::placeholder {

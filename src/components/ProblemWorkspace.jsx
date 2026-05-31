@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { useLocation, useParams } from 'react-router-dom';
 import { fetchProblemStatement } from '../services/cfStatement';
 import {
@@ -7,13 +7,16 @@ import {
 } from '../utils/problemWorkspace';
 import './ProblemWorkspace.css';
 
-const DEFAULT_PLACEHOLDER = 'fun main() {\n\n}';
+const DEFAULT_KOTLIN_STARTER = `fun main() {
+    // solve here
+}`;
 
 function loadDraft(storageKey) {
   try {
-    return localStorage.getItem(storageKey) || '';
+    const saved = localStorage.getItem(storageKey);
+    return saved === null ? DEFAULT_KOTLIN_STARTER : saved;
   } catch {
-    return '';
+    return DEFAULT_KOTLIN_STARTER;
   }
 }
 
@@ -38,6 +41,9 @@ function ProblemWorkspace() {
   );
 
   const [code, setCode] = useState(() => loadDraft(storageKey));
+  const [hasEdited, setHasEdited] = useState(false);
+  const editorRef = useRef(null);
+  const pendingCaretRef = useRef(null);
 
   // Statement fetch state
   const [stmtStatus, setStmtStatus] = useState('idle'); // 'idle' | 'loading' | 'ok' | 'error'
@@ -47,27 +53,36 @@ function ProblemWorkspace() {
   useEffect(() => {
     if (!contestId || !index) return;
     let cancelled = false;
-    setStmtStatus('loading');
-    setStatement(null);
-    setStmtError('');
-    fetchProblemStatement(contestId, index)
-      .then(data => {
+
+    async function loadStatement() {
+      setStmtStatus('loading');
+      setStatement(null);
+      setStmtError('');
+      try {
+        const data = await fetchProblemStatement(contestId, index);
         if (!cancelled) {
           setStatement(data);
           setStmtStatus('ok');
         }
-      })
-      .catch(err => {
+      } catch (err) {
         if (!cancelled) {
           setStmtError(err.message || 'Failed to load statement.');
           setStmtStatus('error');
         }
-      });
+      }
+    }
+
+    loadStatement();
     return () => { cancelled = true; };
   }, [contestId, index]);
 
   useEffect(() => {
-    setCode(loadDraft(storageKey));
+    function syncDraft() {
+      setCode(loadDraft(storageKey));
+      setHasEdited(false);
+    }
+
+    syncDraft();
   }, [storageKey]);
 
   useEffect(() => {
@@ -77,6 +92,52 @@ function ProblemWorkspace() {
       console.error('Failed to save Codeforces draft:', error);
     }
   }, [code, storageKey]);
+
+  useLayoutEffect(() => {
+    if (pendingCaretRef.current === null || !editorRef.current) {
+      return;
+    }
+
+    editorRef.current.selectionStart = pendingCaretRef.current;
+    editorRef.current.selectionEnd = pendingCaretRef.current;
+    pendingCaretRef.current = null;
+  }, [code]);
+
+  const handleEditorChange = event => {
+    setCode(event.target.value);
+    setHasEdited(true);
+  };
+
+  const handleEditorKeyDown = event => {
+    if (event.key !== 'Tab') {
+      return;
+    }
+
+    event.preventDefault();
+    const editor = event.currentTarget;
+    const start = editor.selectionStart;
+    const end = editor.selectionEnd;
+    const spaces = '    ';
+    const nextCode = `${code.slice(0, start)}${spaces}${code.slice(end)}`;
+
+    setCode(nextCode);
+    setHasEdited(true);
+
+    pendingCaretRef.current = start + spaces.length;
+  };
+
+  const handleResetDraft = () => {
+    const shouldReset = window.confirm(
+      'Reset this local draft to the Kotlin starter code?',
+    );
+
+    if (!shouldReset) {
+      return;
+    }
+
+    setCode(DEFAULT_KOTLIN_STARTER);
+    setHasEdited(true);
+  };
 
   const problemLink = `https://codeforces.com/problemset/problem/${contestId}/${index}`;
 
@@ -208,7 +269,7 @@ function ProblemWorkspace() {
                 href={problemLink}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="problem-workspace-link"
+                className="problem-workspace-link problem-workspace-link--secondary"
               >
                 Open original Codeforces page ↗
               </a>
@@ -222,22 +283,53 @@ function ProblemWorkspace() {
         <section className="problem-workspace-main">
           <div className="problem-workspace-panel problem-workspace-panel--editor">
             <div className="problem-workspace-header">
-              <h2>Kotlin</h2>
+              <div className="problem-workspace-editor-heading">
+                <h2>Kotlin</h2>
+                <span className="problem-workspace-language-badge">.kt</span>
+                <span
+                  className="problem-workspace-editor-problem-id"
+                  aria-label={`Problem ${contestId} ${index}`}
+                >
+                  {contestId} {index}
+                </span>
+              </div>
               <div className="problem-workspace-actions">
-                <button type="button" disabled>
+                {hasEdited && (
+                  <span className="problem-workspace-save-status">
+                    Saved locally
+                  </span>
+                )}
+                <button
+                  type="button"
+                  className="problem-workspace-placeholder-btn"
+                  disabled
+                >
                   Run Samples
                 </button>
-                <button type="button" disabled>
+                <button
+                  type="button"
+                  className="problem-workspace-placeholder-btn"
+                  disabled
+                >
                   Prepare Submit
+                </button>
+                <button
+                  type="button"
+                  className="problem-workspace-reset-btn"
+                  onClick={handleResetDraft}
+                >
+                  Reset Draft
                 </button>
               </div>
             </div>
 
             <textarea
+              ref={editorRef}
               className="problem-workspace-editor"
               value={code}
-              onChange={event => setCode(event.target.value)}
-              placeholder={DEFAULT_PLACEHOLDER}
+              onChange={handleEditorChange}
+              onKeyDown={handleEditorKeyDown}
+              placeholder={DEFAULT_KOTLIN_STARTER}
               spellCheck="false"
               aria-label="Kotlin code editor"
             />
