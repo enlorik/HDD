@@ -8,9 +8,79 @@
 
 import * as cheerio from 'cheerio';
 
+const MATH_TOKEN_PATTERN = /(\$\$\$[\s\S]+?\$\$\$|\$\$[\s\S]+?\$\$|\\\[[\s\S]+?\\\]|\\\([\s\S]+?\\\)|\$[^\n$]+?\$)/g;
+
+const TEX_REPLACEMENTS = [
+  [/\\leq?/g, '≤'],
+  [/\\geq?/g, '≥'],
+  [/\\neq/g, '≠'],
+  [/\\cdot/g, '⋅'],
+  [/\\times/g, '×'],
+  [/\\div/g, '÷'],
+  [/\\pm/g, '±'],
+  [/\\ldots|\\dots/g, '…'],
+  [/\\infty/g, '∞'],
+  [/\\sum/g, '∑'],
+  [/\\prod/g, '∏'],
+  [/\\sqrt/g, '√'],
+  [/\\log/g, 'log'],
+  [/\\min/g, 'min'],
+  [/\\max/g, 'max'],
+  [/\\gcd/g, 'gcd'],
+  [/\\bmod/g, 'mod'],
+  [/\\mod/g, 'mod'],
+  [/\\in/g, '∈'],
+  [/\\notin/g, '∉'],
+  [/\\to/g, '→'],
+  [/\\rightarrow/g, '→'],
+  [/\\left/g, ''],
+  [/\\right/g, ''],
+  [/\\,/g, ' '],
+  [/\\ /g, ' '],
+  [/\\_/g, '_'],
+  [/\\\{/g, '{'],
+  [/\\\}/g, '}'],
+];
+
+function stripMathDelimiters(token) {
+  if (token.startsWith('$$$') && token.endsWith('$$$')) {
+    return token.slice(3, -3);
+  }
+  if (token.startsWith('$$') && token.endsWith('$$')) {
+    return token.slice(2, -2);
+  }
+  if (token.startsWith('\\[') && token.endsWith('\\]')) {
+    return token.slice(2, -2);
+  }
+  if (token.startsWith('\\(') && token.endsWith('\\)')) {
+    return token.slice(2, -2);
+  }
+  if (token.startsWith('$') && token.endsWith('$')) {
+    return token.slice(1, -1);
+  }
+  return token;
+}
+
+function normalizeTex(tex) {
+  let result = tex.trim();
+
+  for (const [pattern, replacement] of TEX_REPLACEMENTS) {
+    result = result.replace(pattern, replacement);
+  }
+
+  return result
+    .replace(/\{([^{}]+)\}/g, '$1')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function normalizeMathMarkers(text) {
+  return text.replace(MATH_TOKEN_PATTERN, token => normalizeTex(stripMathDelimiters(token)));
+}
+
 /**
  * Replace block-level children and <br> tags with newlines, then return the
- * trimmed text content of an element.  This preserves paragraph breaks without
+ * trimmed text content of an element. This preserves paragraph breaks without
  * leaking any HTML tags to the caller.
  *
  * @param {import('cheerio').CheerioAPI} $ - cheerio root
@@ -23,11 +93,11 @@ function blockText($, el) {
   clone.find('p').each((_, p) => {
     $(p).prepend('\n').append('\n');
   });
-  return clone
+  return normalizeMathMarkers(clone
     .text()
     .replace(/\r\n|\r/g, '\n')
     .replace(/\n{3,}/g, '\n\n')
-    .trim();
+    .trim());
 }
 
 /**
@@ -48,7 +118,7 @@ export function parseCFProblemStatement(html) {
   const header = stmtEl.find('.header').first();
 
   // ---- title ----------------------------------------------------------------
-  const title = header.find('.title').first().text().trim();
+  const title = normalizeMathMarkers(header.find('.title').first().text().trim());
 
   // ---- limits ---------------------------------------------------------------
   // The limit divs look like:
