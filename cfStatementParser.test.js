@@ -133,6 +133,45 @@ const FIXTURE_MULTI_PARA = `
 </html>
 `;
 
+const FIXTURE_MATH = `
+<!DOCTYPE html>
+<html>
+<body>
+<div class="problem-statement">
+  <div class="header">
+    <div class="title">C. Math $$$x\\le y$$$</div>
+    <div class="time-limit">
+      <div class="property-title">time limit per test</div>1 second
+    </div>
+    <div class="memory-limit">
+      <div class="property-title">memory limit per test</div>256 megabytes
+    </div>
+  </div>
+
+  <p>You are given $$$n$$$ numbers and $$$a_i \\le b_i$$$.</p>
+  <p>Compute $$$x \\cdot y$$$.</p>
+
+  <div class="input-specification">
+    <div class="section-title">Input</div>
+    <p>The first line contains $$$n$$$ ($$$1 \\le n \\le 10^5$$$).</p>
+  </div>
+
+  <div class="output-specification">
+    <div class="section-title">Output</div>
+    <p>Print $$$x \\neq y$$$ if possible.</p>
+  </div>
+
+  <div class="sample-tests">
+    <div class="sample-test">
+      <div class="input"><pre>$$$raw sample should stay raw$$$</pre></div>
+      <div class="output"><pre>1</pre></div>
+    </div>
+  </div>
+</div>
+</body>
+</html>
+`;
+
 describe('parseCFProblemStatement', () => {
   it('returns null when there is no .problem-statement element', () => {
     expect(parseCFProblemStatement(FIXTURE_NO_STATEMENT)).toBeNull();
@@ -210,5 +249,22 @@ describe('parseCFProblemStatement', () => {
     expect(result.statement).toContain('Third paragraph');
     expect(result.samples[0].input).toBe('3\n1 2 3');
     expect(result.samples[0].output).toBe('6');
+  });
+
+  it('normalizes Codeforces math markers in statement fields', () => {
+    const result = parseCFProblemStatement(FIXTURE_MATH);
+
+    expect(result.title).toBe('C. Math x≤ y');
+    expect(result.statement).toContain('given n numbers');
+    expect(result.statement).toContain('a_i ≤ b_i');
+    expect(result.statement).toContain('x ⋅ y');
+    expect(result.inputSpecification).toContain('1 ≤ n ≤ 10^5');
+    expect(result.outputSpecification).toContain('x ≠ y');
+  });
+
+  it('does not normalize math markers inside sample blocks', () => {
+    const result = parseCFProblemStatement(FIXTURE_MATH);
+
+    expect(result.samples[0].input).toBe('$$$raw sample should stay raw$$$');
   });
 });
