@@ -341,3 +341,17 @@
   white-space: pre;
   overflow-x: auto;
 }
+
+.problem-workspace-stmt-text p {
+  margin: 0 0 0.65rem;
+}
+
+.problem-workspace-stmt-text p:last-child {
+  margin-bottom: 0;
+}
+
+.problem-workspace-stmt-text .tex-span,
+.problem-workspace-stmt-text sup,
+.problem-workspace-stmt-text sub {
+  white-space: nowrap;
+}
