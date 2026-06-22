@@ -27,7 +27,7 @@ const FIXTURE_HTML = `
     </div>
   </div>
 
-  <p>You are given two integers $a$ and $b$.</p>
+  <p>You are given two integers <span class="tex-span"><i>a</i></span> and <span class="tex-span"><i>b</i><sup>2</sup></span>.</p>
   <p>Print their sum.</p>
 
   <div class="input-specification">
@@ -196,10 +196,19 @@ describe('parseCFProblemStatement', () => {
       timeLimit: expect.any(String),
       memoryLimit: expect.any(String),
       statement: expect.any(String),
+      statementHtml: expect.any(String),
       inputSpecification: expect.any(String),
+      inputSpecificationHtml: expect.any(String),
       outputSpecification: expect.any(String),
+      outputSpecificationHtml: expect.any(String),
       samples: expect.any(Array),
     });
+  });
+
+  it('preserves sanitized Codeforces math markup for rendering', () => {
+    const result = parseCFProblemStatement(FIXTURE_HTML);
+    expect(result.statementHtml).toContain('<span class="tex-span"><i>a</i></span>');
+    expect(result.statementHtml).toContain('<sup>2</sup>');
   });
 
   it('handles multi-paragraph statement and multi-line sample input', () => {

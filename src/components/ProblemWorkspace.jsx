@@ -5,6 +5,7 @@ import {
   getDraftStorageKey,
   parseProblemWorkspaceQuery,
 } from '../utils/problemWorkspace';
+import { renderMathInHtml, textToHtml } from '../utils/renderMath';
 import './ProblemWorkspace.css';
 
 const DEFAULT_KOTLIN_STARTER = `fun main() {
@@ -18,6 +19,17 @@ function loadDraft(storageKey) {
   } catch {
     return DEFAULT_KOTLIN_STARTER;
   }
+}
+
+function StatementHtml({ html, fallback }) {
+  const renderedHtml = renderMathInHtml(html || textToHtml(fallback));
+
+  return (
+    <div
+      className="problem-workspace-stmt-text"
+      dangerouslySetInnerHTML={{ __html: renderedHtml }}
+    />
+  );
 }
 
 function ProblemWorkspace() {
@@ -217,27 +229,30 @@ function ProblemWorkspace() {
                 <div className="problem-workspace-stmt-body">
                   {statement.statement && (
                     <div className="problem-workspace-stmt-section">
-                      <p className="problem-workspace-stmt-text">
-                        {statement.statement}
-                      </p>
+                      <StatementHtml
+                        html={statement.statementHtml}
+                        fallback={statement.statement}
+                      />
                     </div>
                   )}
 
                   {statement.inputSpecification && (
                     <div className="problem-workspace-stmt-section">
                       <h3 className="problem-workspace-stmt-heading">Input</h3>
-                      <p className="problem-workspace-stmt-text">
-                        {statement.inputSpecification}
-                      </p>
+                      <StatementHtml
+                        html={statement.inputSpecificationHtml}
+                        fallback={statement.inputSpecification}
+                      />
                     </div>
                   )}
 
                   {statement.outputSpecification && (
                     <div className="problem-workspace-stmt-section">
                       <h3 className="problem-workspace-stmt-heading">Output</h3>
-                      <p className="problem-workspace-stmt-text">
-                        {statement.outputSpecification}
-                      </p>
+                      <StatementHtml
+                        html={statement.outputSpecificationHtml}
+                        fallback={statement.outputSpecification}
+                      />
                     </div>
                   )}
 
