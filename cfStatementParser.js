@@ -1,12 +1,65 @@
 /**
  * Server-side helper: parse a Codeforces problem page HTML string into
- * structured, plain-text fields safe to return to the React frontend.
+ * structured fields safe to return to the React frontend.
  *
  * Returns null when the page does not contain a `.problem-statement` element
  * (e.g. the problem/contest does not exist or the URL was wrong).
  */
 
 import * as cheerio from 'cheerio';
+
+const ALLOWED_TAGS = new Set([
+  'p', 'br', 'span', 'i', 'b', 'strong', 'em', 'sup', 'sub', 's', 'u',
+  'ul', 'ol', 'li', 'div', 'table', 'thead', 'tbody', 'tr', 'th', 'td',
+  'code', 'pre', 'var',
+]);
+
+const ALLOWED_CLASS_PREFIXES = [
+  'tex-',
+  'MathJax',
+  'mjx-',
+];
+
+function sanitizeClassName(className) {
+  return className
+    .split(/\s+/)
+    .filter(name => ALLOWED_CLASS_PREFIXES.some(prefix => name.startsWith(prefix)))
+    .join(' ');
+}
+
+/**
+ * Return a conservative HTML fragment that preserves Codeforces' pre-rendered
+ * math markup (for example tex-span, sup, sub and italic variables) while
+ * stripping scripts, styles, event handlers, links and unrelated attributes.
+ *
+ * @param {import('cheerio').CheerioAPI} $ - cheerio root
+ * @param {import('cheerio').Cheerio} el  - element to sanitize
+ * @returns {string}
+ */
+function safeHtml($, el) {
+  const clone = $(el).clone();
+  clone.find('script, style, iframe, object, embed, link, meta').remove();
+
+  clone.find('*').each((_, node) => {
+    const tagName = node.tagName?.toLowerCase();
+    const nodeEl = $(node);
+
+    if (!ALLOWED_TAGS.has(tagName)) {
+      nodeEl.replaceWith(nodeEl.contents());
+      return;
+    }
+
+    const className = sanitizeClassName(nodeEl.attr('class') || '');
+    for (const attr of Object.keys(node.attribs || {})) {
+      nodeEl.removeAttr(attr);
+    }
+    if (className) {
+      nodeEl.attr('class', className);
+    }
+  });
+
+  return clone.html()?.trim() || '';
+}
 
 /**
  * Replace block-level children and <br> tags with newlines, then return the
@@ -17,6 +70,7 @@ import * as cheerio from 'cheerio';
  * @param {import('cheerio').Cheerio} el  - element to extract text from
  * @returns {string}
  */
+
 function blockText($, el) {
   const clone = $(el).clone();
   clone.find('br').replaceWith('\n');
@@ -35,8 +89,9 @@ function blockText($, el) {
  *
  * @param {string} html - full HTML of the Codeforces problemset/problem page
  * @returns {{ title: string, timeLimit: string, memoryLimit: string,
- *             statement: string, inputSpecification: string,
- *             outputSpecification: string,
+ *             statement: string, statementHtml: string,
+ *             inputSpecification: string, inputSpecificationHtml: string,
+ *             outputSpecification: string, outputSpecificationHtml: string,
  *             samples: Array<{ input: string, output: string }> } | null}
  */
 export function parseCFProblemStatement(html) {
@@ -77,23 +132,29 @@ export function parseCFProblemStatement(html) {
   ]);
 
   const statementParts = [];
+  const statementHtmlParts = [];
   stmtEl.children().each((_, child) => {
     const classes = ($(child).attr('class') || '').split(/\s+/);
     if (classes.some(c => SKIP_CLASSES.has(c))) return;
     const text = blockText($, child);
     if (text) statementParts.push(text);
+    const html = safeHtml($, child);
+    if (html) statementHtmlParts.push(html);
   });
   const statement = statementParts.join('\n\n');
+  const statementHtml = statementHtmlParts.join('\n');
 
   // ---- input specification --------------------------------------------------
   const inputSpecClone = stmtEl.find('.input-specification').clone();
   inputSpecClone.find('.section-title').remove();
   const inputSpecification = blockText($, inputSpecClone);
+  const inputSpecificationHtml = safeHtml($, inputSpecClone);
 
   // ---- output specification -------------------------------------------------
   const outputSpecClone = stmtEl.find('.output-specification').clone();
   outputSpecClone.find('.section-title').remove();
   const outputSpecification = blockText($, outputSpecClone);
+  const outputSpecificationHtml = safeHtml($, outputSpecClone);
 
   // ---- sample tests ---------------------------------------------------------
   const samples = [];
@@ -108,8 +169,11 @@ export function parseCFProblemStatement(html) {
     timeLimit,
     memoryLimit,
     statement,
+    statementHtml,
     inputSpecification,
+    inputSpecificationHtml,
     outputSpecification,
+    outputSpecificationHtml,
     samples,
   };
 }

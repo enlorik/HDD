@@ -20,6 +20,19 @@ function loadDraft(storageKey) {
   }
 }
 
+function StatementHtml({ html, fallback }) {
+  if (html) {
+    return (
+      <div
+        className="problem-workspace-stmt-text"
+        dangerouslySetInnerHTML={{ __html: html }}
+      />
+    );
+  }
+
+  return <p className="problem-workspace-stmt-text">{fallback}</p>;
+}
+
 function ProblemWorkspace() {
   const { contestId = '', index = '' } = useParams();
   const location = useLocation();
@@ -217,27 +230,30 @@ function ProblemWorkspace() {
                 <div className="problem-workspace-stmt-body">
                   {statement.statement && (
                     <div className="problem-workspace-stmt-section">
-                      <p className="problem-workspace-stmt-text">
-                        {statement.statement}
-                      </p>
+                      <StatementHtml
+                        html={statement.statementHtml}
+                        fallback={statement.statement}
+                      />
                     </div>
                   )}
 
                   {statement.inputSpecification && (
                     <div className="problem-workspace-stmt-section">
                       <h3 className="problem-workspace-stmt-heading">Input</h3>
-                      <p className="problem-workspace-stmt-text">
-                        {statement.inputSpecification}
-                      </p>
+                      <StatementHtml
+                        html={statement.inputSpecificationHtml}
+                        fallback={statement.inputSpecification}
+                      />
                     </div>
                   )}
 
                   {statement.outputSpecification && (
                     <div className="problem-workspace-stmt-section">
                       <h3 className="problem-workspace-stmt-heading">Output</h3>
-                      <p className="problem-workspace-stmt-text">
-                        {statement.outputSpecification}
-                      </p>
+                      <StatementHtml
+                        html={statement.outputSpecificationHtml}
+                        fallback={statement.outputSpecification}
+                      />
                     </div>
                   )}
 
