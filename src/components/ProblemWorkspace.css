@@ -355,3 +355,16 @@
 .problem-workspace-stmt-text sub {
   white-space: nowrap;
 }
+
+.problem-workspace-math {
+  display: inline-block;
+  font-family: Georgia, 'Times New Roman', serif;
+  font-style: italic;
+  white-space: nowrap;
+}
+
+.problem-workspace-math sup,
+.problem-workspace-math sub {
+  font-size: 0.72em;
+  line-height: 0;
+}

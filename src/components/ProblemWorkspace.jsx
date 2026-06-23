@@ -5,6 +5,7 @@ import {
   getDraftStorageKey,
   parseProblemWorkspaceQuery,
 } from '../utils/problemWorkspace';
+import { renderMathInHtml, textToHtml } from '../utils/renderMath';
 import './ProblemWorkspace.css';
 
 const DEFAULT_KOTLIN_STARTER = `fun main() {
@@ -21,16 +22,14 @@ function loadDraft(storageKey) {
 }
 
 function StatementHtml({ html, fallback }) {
-  if (html) {
-    return (
-      <div
-        className="problem-workspace-stmt-text"
-        dangerouslySetInnerHTML={{ __html: html }}
-      />
-    );
-  }
+  const renderedHtml = renderMathInHtml(html || textToHtml(fallback));
 
-  return <p className="problem-workspace-stmt-text">{fallback}</p>;
+  return (
+    <div
+      className="problem-workspace-stmt-text"
+      dangerouslySetInnerHTML={{ __html: renderedHtml }}
+    />
+  );
 }
 
 function ProblemWorkspace() {
