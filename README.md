@@ -112,3 +112,13 @@ The app is configured for [Railway](https://railway.app) via `railway.json`:
 - **Build**: `npm run build` (Nixpacks builder)
 - **Start**: `node server.js`
 - **Restart policy**: on failure, up to 10 retries
+
+## Design notes
+
+**Why a proxy server for a frontend app** — Codeforces doesn't send CORS headers, so the browser can't call the API directly. The Express proxy handles that, and also scrapes problem statement HTML, which is impossible cross-origin from the browser. A side benefit: one chokepoint for rate limiting, so a buggy client can't hammer Codeforces and get the shared hosting IP temporarily banned.
+
+**Why the daily pick is deterministic** — The same UTC date produces the same problem for every user. Refreshing doesn't reroll (no slot-machine effect), the pick is trivially cacheable, and two people can discuss "today's graph problem" the way people discuss Wordle answers. It also makes the selection logic easy to test: fix the date and inputs, snapshot the expected output.
+
+**Why the rating band is asymmetric [−100, +300]** — Practice should stretch, not repeat. A small floor below your current rating keeps a warm-up option available; the larger ceiling pushes toward difficulty. The asymmetry reflects the deliberate-practice idea that slightly-too-hard is more valuable for growth than slightly-too-easy.
+
+**Why `Promise.allSettled` instead of `Promise.all`** — The daily page needs three things: the problemset, your user info, and your solved submissions. If one fetch fails (handle not set, Codeforces API hiccup), `allSettled` delivers whatever succeeded and lets the page render with sensible defaults. `Promise.all` would reject everything on a single partial failure and leave the page blank.
