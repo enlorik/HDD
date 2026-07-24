@@ -115,7 +115,7 @@ The app is configured for [Railway](https://railway.app) via `railway.json`:
 
 ## Design notes
 
-**Why a proxy server for a frontend app** — Codeforces doesn't send CORS headers, so the browser can't call the API directly. The Express proxy handles that, and also scrapes problem statement HTML, which is impossible cross-origin from the browser. A side benefit: one chokepoint for rate limiting, so a buggy client can't hammer Codeforces and get the shared hosting IP temporarily banned.
+**Why a proxy server for a frontend app** — Codeforces doesn't send CORS headers, so the browser can't call the API directly. The Express proxy handles that for proxied endpoints, and also scrapes problem statement HTML, which is impossible cross-origin from the browser. Note that the Timeline and Bounty pages fetch contest data directly from the browser (not via the proxy), so the rate limiter only covers the proxied daily-problems and statement endpoints — not all Codeforces traffic.
 
 **Why the daily pick is deterministic** — For the same date, rating, and solved-problem history, the pick is always identical. Refreshing doesn't reroll (no slot-machine effect), and the result is easy to test: fix the date and inputs, snapshot the expected output. Two users with the same rating and solved set get the same problem; users with different ratings or solved sets get different candidates and may get different picks — the pick is stable per user across the day, not globally uniform.
 
