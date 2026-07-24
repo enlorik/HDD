@@ -117,7 +117,7 @@ The app is configured for [Railway](https://railway.app) via `railway.json`:
 
 **Why a proxy server for a frontend app** — Codeforces doesn't send CORS headers, so the browser can't call the API directly. The Express proxy handles that, and also scrapes problem statement HTML, which is impossible cross-origin from the browser. A side benefit: one chokepoint for rate limiting, so a buggy client can't hammer Codeforces and get the shared hosting IP temporarily banned.
 
-**Why the daily pick is deterministic** — The same UTC date produces the same problem for every user. Refreshing doesn't reroll (no slot-machine effect), the pick is trivially cacheable, and two people can discuss "today's graph problem" the way people discuss Wordle answers. It also makes the selection logic easy to test: fix the date and inputs, snapshot the expected output.
+**Why the daily pick is deterministic** — For the same date, rating, and solved-problem history, the pick is always identical. Refreshing doesn't reroll (no slot-machine effect), and the result is easy to test: fix the date and inputs, snapshot the expected output. Two users with the same rating and solved set get the same problem; users with different ratings or solved sets get different candidates and may get different picks — the pick is stable per user across the day, not globally uniform.
 
 **Why the rating band is asymmetric [−100, +300]** — Practice should stretch, not repeat. A small floor below your current rating keeps a warm-up option available; the larger ceiling pushes toward difficulty. The asymmetry reflects the deliberate-practice idea that slightly-too-hard is more valuable for growth than slightly-too-easy.
 
