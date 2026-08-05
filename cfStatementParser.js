@@ -159,8 +159,12 @@ export function parseCFProblemStatement(html) {
   // ---- sample tests ---------------------------------------------------------
   const samples = [];
   stmtEl.find('.sample-test').each((_, sampleEl) => {
-    const input = $(sampleEl).find('.input pre').first().text().trim();
-    const output = $(sampleEl).find('.output pre').first().text().trim();
+    const inputEl  = $(sampleEl).find('.input pre').first();
+    const outputEl = $(sampleEl).find('.output pre').first();
+    inputEl.find('br').replaceWith('\n');
+    outputEl.find('br').replaceWith('\n');
+    const input  = inputEl.text().trim();
+    const output = outputEl.text().trim();
     samples.push({ input, output });
   });
 
