@@ -23,14 +23,15 @@ function normalizeLatex(latex) {
     .replace(/\\max/g, 'max')
     .replace(/\\left|\\right/g, '')
     .replace(/\\,/g, ' ')
-    .replace(/\\ /g, ' ');
+    .replace(/\\ /g, ' ')
+    .replace(/\\(?:text|mathrm|mathbf)\{([^{}]*)\}/g, '$1');
 }
 
 export function renderMathExpression(latex) {
   let rendered = escapeHtml(normalizeLatex(latex).trim());
 
-  rendered = rendered.replace(/\^\{([^{}]+)\}/g, '<sup>$1</sup>');
-  rendered = rendered.replace(/_\{([^{}]+)\}/g, '<sub>$1</sub>');
+  rendered = rendered.replace(/\^\{([^{}]*(?:\{[^{}]*\}[^{}]*)*)\}/g, '<sup>$1</sup>');
+  rendered = rendered.replace(/_\{([^{}]*(?:\{[^{}]*\}[^{}]*)*)\}/g, '<sub>$1</sub>');
   rendered = rendered.replace(/\^([A-Za-z0-9+-])/g, '<sup>$1</sup>');
   rendered = rendered.replace(/_([A-Za-z0-9+-])/g, '<sub>$1</sub>');
 

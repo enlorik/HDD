@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { useLocation, useParams } from 'react-router-dom';
 import { fetchProblemStatement } from '../services/cfStatement';
 import {
@@ -54,8 +54,10 @@ function ProblemWorkspace() {
 
   const [code, setCode] = useState(() => loadDraft(storageKey));
   const [hasEdited, setHasEdited] = useState(false);
+  const [leftWidth, setLeftWidth] = useState(320);
   const editorRef = useRef(null);
   const pendingCaretRef = useRef(null);
+  const containerRef = useRef(null);
 
   // Statement fetch state
   const [stmtStatus, setStmtStatus] = useState('idle'); // 'idle' | 'loading' | 'ok' | 'error'
@@ -151,6 +153,21 @@ function ProblemWorkspace() {
     setHasEdited(true);
   };
 
+  const handleDividerMouseDown = useCallback((e) => {
+    e.preventDefault();
+    const onMouseMove = (ev) => {
+      if (!containerRef.current) return;
+      const left = containerRef.current.getBoundingClientRect().left;
+      setLeftWidth(Math.min(800, Math.max(220, ev.clientX - left)));
+    };
+    const onMouseUp = () => {
+      document.removeEventListener('mousemove', onMouseMove);
+      document.removeEventListener('mouseup', onMouseUp);
+    };
+    document.addEventListener('mousemove', onMouseMove);
+    document.addEventListener('mouseup', onMouseUp);
+  }, []);
+
   const problemLink = `https://codeforces.com/problemset/problem/${contestId}/${index}`;
 
   const displayTitle =
@@ -158,7 +175,11 @@ function ProblemWorkspace() {
 
   return (
     <div className="problem-workspace-page">
-      <div className="problem-workspace-layout">
+      <div
+        ref={containerRef}
+        className="problem-workspace-layout"
+        style={{ '--left-pane-width': `${leftWidth}px` }}
+      >
         {/* ---------------------------------------------------------------- */}
         {/* Left column: problem statement                                    */}
         {/* ---------------------------------------------------------------- */}
@@ -291,6 +312,13 @@ function ProblemWorkspace() {
             </>
           )}
         </aside>
+
+        <div
+          className="problem-workspace-divider"
+          onMouseDown={handleDividerMouseDown}
+          role="separator"
+          aria-label="Resize panels"
+        />
 
         {/* ---------------------------------------------------------------- */}
         {/* Right column: editor + results                                    */}

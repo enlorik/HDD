@@ -9,9 +9,21 @@
   max-width: 1400px;
   margin: 0 auto;
   display: grid;
-  grid-template-columns: minmax(260px, 340px) minmax(0, 1fr);
-  gap: 1rem;
+  grid-template-columns: var(--left-pane-width, 320px) 6px 1fr;
+  column-gap: 0;
+  row-gap: 1rem;
   align-items: start;
+}
+
+.problem-workspace-divider {
+  width: 6px;
+  cursor: col-resize;
+  background: transparent;
+  align-self: stretch;
+}
+
+.problem-workspace-divider:hover {
+  background: var(--color-border, #333);
 }
 
 .problem-workspace-main {
@@ -209,7 +221,11 @@
 
 @media (max-width: 980px) {
   .problem-workspace-layout {
-    grid-template-columns: 1fr;
+    grid-template-columns: 1fr !important;
+  }
+
+  .problem-workspace-divider {
+    display: none;
   }
 
   .problem-workspace-panel--info,
@@ -310,8 +326,8 @@
 }
 
 .problem-workspace-sample {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
+  display: flex;
+  flex-direction: column;
   gap: 0.5rem;
   margin-top: 0.35rem;
 }
@@ -340,6 +356,7 @@
   margin: 0;
   white-space: pre;
   overflow-x: auto;
+  max-width: 100%;
 }
 
 .problem-workspace-stmt-text p {
