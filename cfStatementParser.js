@@ -71,6 +71,21 @@ function safeHtml($, el) {
  * @returns {string}
  */
 
+function sampleText($, preEl) {
+  const $pre = $(preEl);
+  const $divs = $pre.find('div');
+  if ($divs.length) {
+    return $divs.toArray()
+      .map(div => $(div).text())
+      .join('\n')
+      .replace(/\r\n|\r/g, '\n')
+      .trim();
+  }
+  const clone = $pre.clone();
+  clone.find('br').replaceWith('\n');
+  return clone.text().replace(/\r\n|\r/g, '\n').trim();
+}
+
 function blockText($, el) {
   const clone = $(el).clone();
   clone.find('br').replaceWith('\n');
@@ -159,12 +174,8 @@ export function parseCFProblemStatement(html) {
   // ---- sample tests ---------------------------------------------------------
   const samples = [];
   stmtEl.find('.sample-test').each((_, sampleEl) => {
-    const inputEl  = $(sampleEl).find('.input pre').first();
-    const outputEl = $(sampleEl).find('.output pre').first();
-    inputEl.find('br').replaceWith('\n');
-    outputEl.find('br').replaceWith('\n');
-    const input  = inputEl.text().trim();
-    const output = outputEl.text().trim();
+    const input  = sampleText($, $(sampleEl).find('.input pre').first());
+    const output = sampleText($, $(sampleEl).find('.output pre').first());
     samples.push({ input, output });
   });
 
