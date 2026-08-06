@@ -72,13 +72,17 @@ function safeHtml($, el) {
  */
 
 function sampleText($, preEl) {
-  const clone = $(preEl).clone();
-  clone.find('br').replaceWith('\n');
-  const divs = clone.find('div').toArray().reverse();
-  for (const div of divs) {
-    const $div = $(div);
-    $div.replaceWith($div.text() + '\n');
+  const $pre = $(preEl);
+  const $divs = $pre.find('div');
+  if ($divs.length) {
+    return $divs.toArray()
+      .map(div => $(div).text())
+      .join('\n')
+      .replace(/\r\n|\r/g, '\n')
+      .trim();
   }
+  const clone = $pre.clone();
+  clone.find('br').replaceWith('\n');
   return clone.text().replace(/\r\n|\r/g, '\n').trim();
 }
 
