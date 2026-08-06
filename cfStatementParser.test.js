@@ -180,6 +180,53 @@ const FIXTURE_BR_SAMPLES = `
 </html>
 `;
 
+// Modern Codeforces format where each sample line is wrapped in a
+// <div class="test-example-line"> inside <pre> instead of using <br>.
+const FIXTURE_DIV_SAMPLES = `
+<!DOCTYPE html>
+<html>
+<body>
+<div class="problem-statement">
+  <div class="header">
+    <div class="title">D. Div Lines</div>
+    <div class="time-limit">
+      <div class="property-title">time limit per test</div>2 seconds
+    </div>
+    <div class="memory-limit">
+      <div class="property-title">memory limit per test</div>256 megabytes
+    </div>
+  </div>
+
+  <p>Find the count and sum.</p>
+
+  <div class="input-specification">
+    <div class="section-title">Input</div>
+    <p>First line is $n$, next $n$ lines are values.</p>
+  </div>
+
+  <div class="output-specification">
+    <div class="section-title">Output</div>
+    <p>Print count then sum.</p>
+  </div>
+
+  <div class="sample-tests">
+    <div class="section-title">Examples</div>
+    <div class="sample-test">
+      <div class="input">
+        <div class="title">Input</div>
+        <pre><div class="test-example-line test-example-line-even">3</div><div class="test-example-line test-example-line-odd">10</div><div class="test-example-line test-example-line-even">20</div><div class="test-example-line test-example-line-odd">30</div></pre>
+      </div>
+      <div class="output">
+        <div class="title">Output</div>
+        <pre><div class="test-example-line test-example-line-even">3</div><div class="test-example-line test-example-line-odd">60</div></pre>
+      </div>
+    </div>
+  </div>
+</div>
+</body>
+</html>
+`;
+
 describe('parseCFProblemStatement', () => {
   it('returns null when there is no .problem-statement element', () => {
     expect(parseCFProblemStatement(FIXTURE_NO_STATEMENT)).toBeNull();
@@ -272,5 +319,11 @@ describe('parseCFProblemStatement', () => {
     const result = parseCFProblemStatement(FIXTURE_BR_SAMPLES);
     expect(result.samples[0].input).toBe('3\n1 3 2');
     expect(result.samples[0].output).toBe('1\n2\n3');
+  });
+
+  it('handles modern CF format where sample lines are <div class="test-example-line"> elements', () => {
+    const result = parseCFProblemStatement(FIXTURE_DIV_SAMPLES);
+    expect(result.samples[0].input).toBe('3\n10\n20\n30');
+    expect(result.samples[0].output).toBe('3\n60');
   });
 });
