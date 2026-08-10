@@ -188,6 +188,62 @@ describe('runKotlinSamples', () => {
     expect(results[0].compileOutput).toContain('error');
   });
 
+  it('sends RapidAPI headers when JUDGE0_RAPIDAPI_HOST is set', async () => {
+    process.env.JUDGE0_API_KEY = 'test-rapidapi-key';
+    process.env.JUDGE0_RAPIDAPI_HOST = 'judge0-ce.p.rapidapi.com';
+
+    const capturedHeaders = [];
+    vi.spyOn(globalThis, 'fetch').mockImplementation(async (url, opts) => {
+      capturedHeaders.push(opts?.headers ?? {});
+      if (capturedHeaders.length === 1) {
+        return { ok: true, json: async () => [{ token: 'tok' }], text: async () => '' };
+      }
+      return {
+        ok: true,
+        json: async () => ({ submissions: [{ status: { id: 3 }, stdout: '1\n', stderr: null, compile_output: null, time: '0.1', memory: 512 }] }),
+        text: async () => '',
+      };
+    });
+
+    const promise = runKotlinSamples('fun main() { println(1) }', [{ input: '', output: '1' }], { cpu_time_limit: 2, memory_limit: 262_144 });
+    await vi.runAllTimersAsync();
+    await promise;
+
+    expect(capturedHeaders[0]['X-RapidAPI-Key']).toBe('test-rapidapi-key');
+    expect(capturedHeaders[0]['X-RapidAPI-Host']).toBe('judge0-ce.p.rapidapi.com');
+    expect(capturedHeaders[0]['X-Auth-Token']).toBeUndefined();
+
+    delete process.env.JUDGE0_API_KEY;
+    delete process.env.JUDGE0_RAPIDAPI_HOST;
+  });
+
+  it('sends X-Auth-Token when JUDGE0_RAPIDAPI_HOST is absent', async () => {
+    process.env.JUDGE0_API_KEY = 'self-hosted-token';
+    delete process.env.JUDGE0_RAPIDAPI_HOST;
+
+    const capturedHeaders = [];
+    vi.spyOn(globalThis, 'fetch').mockImplementation(async (_url, opts) => {
+      capturedHeaders.push(opts?.headers ?? {});
+      if (capturedHeaders.length === 1) {
+        return { ok: true, json: async () => [{ token: 'tok' }], text: async () => '' };
+      }
+      return {
+        ok: true,
+        json: async () => ({ submissions: [{ status: { id: 3 }, stdout: '1\n', stderr: null, compile_output: null, time: '0.1', memory: 512 }] }),
+        text: async () => '',
+      };
+    });
+
+    const promise = runKotlinSamples('fun main() { println(1) }', [{ input: '', output: '1' }], { cpu_time_limit: 2, memory_limit: 262_144 });
+    await vi.runAllTimersAsync();
+    await promise;
+
+    expect(capturedHeaders[0]['X-Auth-Token']).toBe('self-hosted-token');
+    expect(capturedHeaders[0]['X-RapidAPI-Key']).toBeUndefined();
+
+    delete process.env.JUDGE0_API_KEY;
+  });
+
   it('throws when JUDGE0_URL is not configured', async () => {
     const saved = process.env.JUDGE0_URL;
     process.env.JUDGE0_URL = '';

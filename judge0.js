@@ -42,8 +42,14 @@ export function parseLimits(timeLimit, memoryLimit) {
   return { cpu_time_limit: cpu, memory_limit: mem };
 }
 
+// When JUDGE0_RAPIDAPI_HOST is set, send RapidAPI headers (X-RapidAPI-Key / X-RapidAPI-Host).
+// Otherwise, fall back to X-Auth-Token for a self-hosted Judge0 instance.
 function authHeaders() {
   const key = judge0ApiKey();
+  const rapidApiHost = process.env.JUDGE0_RAPIDAPI_HOST || '';
+  if (key && rapidApiHost) {
+    return { 'X-RapidAPI-Key': key, 'X-RapidAPI-Host': rapidApiHost };
+  }
   if (key) return { 'X-Auth-Token': key };
   return {};
 }
