@@ -32,6 +32,94 @@ function StatementHtml({ html, fallback }) {
   );
 }
 
+const STATUS_LABEL = {
+  matches: 'Matches sample',
+  mismatch: 'Does not match sample',
+  compilation_error: 'Compilation Error',
+  runtime_error: 'Runtime Error',
+  time_limit: 'Time Limit',
+  internal_error: 'Internal Error',
+};
+
+function SampleResults({ runStatus, runResults, runError, hasSamples }) {
+  if (!hasSamples) {
+    return <p className="problem-workspace-run-placeholder">No samples available for this problem.</p>;
+  }
+
+  if (runStatus === 'idle') {
+    return <p className="problem-workspace-run-placeholder">Run the sample tests to see results here.</p>;
+  }
+
+  if (runStatus === 'running') {
+    return <p className="problem-workspace-run-placeholder">Running samples…</p>;
+  }
+
+  if (runStatus === 'error') {
+    return <p className="problem-workspace-run-error">{runError}</p>;
+  }
+
+  if (!runResults?.length) {
+    return <p className="problem-workspace-run-placeholder">No results returned.</p>;
+  }
+
+  // If every result has a compilation error, show the compile output once.
+  const allCompileError = runResults.every(r => r.status === 'compilation_error');
+  const sharedCompileOutput = allCompileError ? runResults[0].compileOutput : null;
+
+  return (
+    <div className="problem-workspace-results-list">
+      {sharedCompileOutput && (
+        <div className="problem-workspace-result-card problem-workspace-result-card--error">
+          <div className="problem-workspace-result-status">Compilation Error</div>
+          <div className="problem-workspace-result-label">Compiler output</div>
+          <pre className="problem-workspace-result-pre">{sharedCompileOutput}</pre>
+        </div>
+      )}
+      {runResults.map((r) => (
+        <div
+          key={r.sample}
+          className={`problem-workspace-result-card problem-workspace-result-card--${r.matches ? 'ok' : 'fail'}`}
+        >
+          <div className="problem-workspace-result-header">
+            <span className="problem-workspace-result-sample">Sample {r.sample}</span>
+            <span className={`problem-workspace-result-status problem-workspace-result-status--${r.matches ? 'ok' : 'fail'}`}>
+              {STATUS_LABEL[r.status] ?? r.status}
+            </span>
+            {r.time != null && (
+              <span className="problem-workspace-result-meta">{r.time}s</span>
+            )}
+            {r.memory != null && (
+              <span className="problem-workspace-result-meta">{Math.round(r.memory / 1024)} MB</span>
+            )}
+          </div>
+          <div className="problem-workspace-result-cols">
+            <div className="problem-workspace-result-col">
+              <div className="problem-workspace-result-label">Expected</div>
+              <pre className="problem-workspace-result-pre">{r.expected}</pre>
+            </div>
+            <div className="problem-workspace-result-col">
+              <div className="problem-workspace-result-label">Output</div>
+              <pre className="problem-workspace-result-pre">{r.stdout ?? '(no output)'}</pre>
+            </div>
+          </div>
+          {!allCompileError && r.compileOutput && (
+            <>
+              <div className="problem-workspace-result-label">Compiler output</div>
+              <pre className="problem-workspace-result-pre problem-workspace-result-pre--err">{r.compileOutput}</pre>
+            </>
+          )}
+          {r.stderr && (
+            <>
+              <div className="problem-workspace-result-label">Stderr</div>
+              <pre className="problem-workspace-result-pre problem-workspace-result-pre--err">{r.stderr}</pre>
+            </>
+          )}
+        </div>
+      ))}
+    </div>
+  );
+}
+
 function ProblemWorkspace() {
   const { contestId = '', index = '' } = useParams();
   const location = useLocation();
@@ -63,6 +151,11 @@ function ProblemWorkspace() {
   const [stmtStatus, setStmtStatus] = useState('idle'); // 'idle' | 'loading' | 'ok' | 'error'
   const [statement, setStatement] = useState(null);
   const [stmtError, setStmtError] = useState('');
+
+  // Run samples state
+  const [runStatus, setRunStatus] = useState('idle'); // 'idle' | 'running' | 'done' | 'error'
+  const [runResults, setRunResults] = useState(null);
+  const [runError, setRunError] = useState('');
 
   useEffect(() => {
     if (!contestId || !index) return;
@@ -138,6 +231,39 @@ function ProblemWorkspace() {
     setHasEdited(true);
 
     pendingCaretRef.current = start + spaces.length;
+  };
+
+  const canRunSamples =
+    stmtStatus === 'ok' &&
+    statement?.samples?.length > 0 &&
+    runStatus !== 'running';
+
+  const handleRunSamples = async () => {
+    if (!canRunSamples) return;
+    setRunStatus('running');
+    setRunResults(null);
+    setRunError('');
+    try {
+      const res = await fetch('/api/run/kotlin-samples', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          code,
+          samples: statement.samples,
+          timeLimit: statement.timeLimit,
+          memoryLimit: statement.memoryLimit,
+        }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        throw new Error(data.error || `HTTP ${res.status}`);
+      }
+      setRunResults(data.results);
+      setRunStatus('done');
+    } catch (err) {
+      setRunError(err.message || 'Failed to run samples.');
+      setRunStatus('error');
+    }
   };
 
   const handleResetDraft = () => {
@@ -344,10 +470,11 @@ function ProblemWorkspace() {
                 )}
                 <button
                   type="button"
-                  className="problem-workspace-placeholder-btn"
-                  disabled
+                  className={canRunSamples ? 'problem-workspace-run-btn' : 'problem-workspace-placeholder-btn'}
+                  disabled={!canRunSamples}
+                  onClick={handleRunSamples}
                 >
-                  Run Samples
+                  {runStatus === 'running' ? 'Running…' : 'Run Samples'}
                 </button>
                 <button
                   type="button"
@@ -380,9 +507,12 @@ function ProblemWorkspace() {
 
           <div className="problem-workspace-panel problem-workspace-panel--results">
             <h2>Samples / Test Results</h2>
-            <p>
-              Sample execution and custom test output will appear here in a future update.
-            </p>
+            <SampleResults
+              runStatus={runStatus}
+              runResults={runResults}
+              runError={runError}
+              hasSamples={statement?.samples?.length > 0}
+            />
           </div>
         </section>
       </div>
