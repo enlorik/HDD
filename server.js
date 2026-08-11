@@ -16,6 +16,8 @@ import { parseLimits, runKotlinSamples } from './judge0.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const app = express();
+// Trust the first proxy (Railway's load balancer) so req.ip reflects the real client IP.
+app.set('trust proxy', 1);
 const PORT = process.env.PORT || 3000;
 const DIST_DIR = path.join(__dirname, 'dist');
 const CF_BASE = 'codeforces.com';
@@ -30,7 +32,7 @@ const INDEX_HTML = fs.readFileSync(path.join(DIST_DIR, 'index.html'), 'utf-8');
 function makeRateLimiter(windowMs, max) {
   const map = new Map();
   return function rateLimit(req, res, next) {
-    const ip = req.headers['x-forwarded-for']?.split(',')[0].trim() || req.socket.remoteAddress || 'unknown';
+    const ip = req.ip || req.socket.remoteAddress || 'unknown';
     const now = Date.now();
     const entry = map.get(ip);
 
