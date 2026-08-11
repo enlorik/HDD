@@ -158,6 +158,12 @@ function ProblemWorkspace() {
   const [runError, setRunError] = useState('');
 
   useEffect(() => {
+    setRunStatus('idle');
+    setRunResults(null);
+    setRunError('');
+  }, [contestId, index]);
+
+  useEffect(() => {
     if (!contestId || !index) return;
     let cancelled = false;
 

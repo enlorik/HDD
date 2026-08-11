@@ -21,6 +21,7 @@ export const LIMITS = {
 
 const POLL_INTERVAL_MS = 1_500;
 const MAX_POLL_ATTEMPTS = 20;
+const FETCH_TIMEOUT_MS = 30_000;
 
 // Judge0 status IDs >= 3 are terminal (finished).
 const TERMINAL_THRESHOLD = 3;
@@ -59,6 +60,7 @@ async function submitBatch(submissions) {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', ...authHeaders() },
     body: JSON.stringify({ submissions }),
+    signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
   });
   if (!res.ok) {
     const text = await res.text().catch(() => '');
@@ -71,7 +73,7 @@ async function pollBatch(tokens) {
   const joined = tokens.join(',');
   const res = await fetch(
     `${judge0Url()}/submissions/batch?tokens=${joined}&base64_encoded=false`,
-    { headers: authHeaders() },
+    { headers: authHeaders(), signal: AbortSignal.timeout(FETCH_TIMEOUT_MS) },
   );
   if (!res.ok) {
     const text = await res.text().catch(() => '');
