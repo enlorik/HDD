@@ -9,7 +9,7 @@ function judge0ApiKey() {
 }
 
 function kotlinLanguageId() {
-  return parseInt(process.env.JUDGE0_KOTLIN_LANGUAGE_ID || '91', 10);
+  return parseInt(process.env.JUDGE0_KOTLIN_LANGUAGE_ID || '78', 10);
 }
 
 export const LIMITS = {
