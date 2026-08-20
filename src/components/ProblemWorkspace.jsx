@@ -146,6 +146,7 @@ function ProblemWorkspace() {
   const editorRef = useRef(null);
   const pendingCaretRef = useRef(null);
   const containerRef = useRef(null);
+  const runAbortRef = useRef(null);
 
   // Statement fetch state
   const [stmtStatus, setStmtStatus] = useState('idle'); // 'idle' | 'loading' | 'ok' | 'error'
@@ -161,6 +162,7 @@ function ProblemWorkspace() {
     setRunStatus('idle');
     setRunResults(null);
     setRunError('');
+    return () => { runAbortRef.current?.abort(); };
   }, [contestId, index]);
 
   useEffect(() => {
@@ -246,6 +248,8 @@ function ProblemWorkspace() {
 
   const handleRunSamples = async () => {
     if (!canRunSamples) return;
+    const controller = new AbortController();
+    runAbortRef.current = controller;
     setRunStatus('running');
     setRunResults(null);
     setRunError('');
@@ -259,6 +263,7 @@ function ProblemWorkspace() {
           timeLimit: statement.timeLimit,
           memoryLimit: statement.memoryLimit,
         }),
+        signal: controller.signal,
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
@@ -267,6 +272,7 @@ function ProblemWorkspace() {
       setRunResults(data.results);
       setRunStatus('done');
     } catch (err) {
+      if (err.name === 'AbortError') return;
       setRunError(err.message || 'Failed to run samples.');
       setRunStatus('error');
     }

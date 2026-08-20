@@ -9,12 +9,12 @@ function judge0ApiKey() {
 }
 
 function kotlinLanguageId() {
-  return parseInt(process.env.JUDGE0_KOTLIN_LANGUAGE_ID || '78', 10);
+  return parseInt(process.env.JUDGE0_KOTLIN_LANGUAGE_ID || '111', 10);
 }
 
 export const LIMITS = {
   MAX_CPU_SECONDS: 10,
-  MAX_MEMORY_KB: 524_288,  // 512 MB
+  MAX_MEMORY_KB: 256_000,  // Judge0 CE ceiling
   DEFAULT_CPU_SECONDS: 5,
   DEFAULT_MEMORY_KB: 262_144, // 256 MB
 };
@@ -127,6 +127,8 @@ export async function runKotlinSamples(code, samples, { cpu_time_limit, memory_l
   }));
 
   const tokenObjs = await submitBatch(submissions);
+  const invalid = tokenObjs.find(t => typeof t.token !== 'string' || !t.token);
+  if (invalid) throw new Error(`Judge0 rejected submission: ${invalid.error ?? 'unknown error'}`);
   const tokens = tokenObjs.map(t => t.token);
 
   for (let attempt = 0; attempt < MAX_POLL_ATTEMPTS; attempt++) {

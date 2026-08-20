@@ -10,21 +10,21 @@ describe('parseLimits', () => {
   it('parses a plain seconds value', () => {
     expect(parseLimits('2 seconds', '256 megabytes')).toEqual({
       cpu_time_limit: 2,
-      memory_limit: 256 * 1024,
+      memory_limit: 256_000,
     });
   });
 
   it('parses decimal seconds', () => {
     expect(parseLimits('1.5 seconds', '256 megabytes')).toEqual({
       cpu_time_limit: 1.5,
-      memory_limit: 262_144,
+      memory_limit: 256_000,
     });
   });
 
-  it('parses various memory sizes', () => {
+  it('clamps memory exceeding the Judge0 CE ceiling', () => {
     expect(parseLimits('2 seconds', '512 megabytes')).toEqual({
       cpu_time_limit: 2,
-      memory_limit: 512 * 1024,
+      memory_limit: LIMITS.MAX_MEMORY_KB,
     });
   });
 
@@ -242,6 +242,18 @@ describe('runKotlinSamples', () => {
     expect(capturedHeaders[0]['X-RapidAPI-Key']).toBeUndefined();
 
     delete process.env.JUDGE0_API_KEY;
+  });
+
+  it('throws when Judge0 returns an error object instead of a token', async () => {
+    vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce({
+      ok: true,
+      json: async () => [{ error: 'Unauthorized' }],
+      text: async () => '',
+    });
+
+    await expect(
+      runKotlinSamples('fun main() {}', [{ input: '', output: '' }], { cpu_time_limit: 2, memory_limit: 262_144 }),
+    ).rejects.toThrow('Judge0 rejected submission: Unauthorized');
   });
 
   it('throws when JUDGE0_URL is not configured', async () => {
