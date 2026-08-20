@@ -385,3 +385,136 @@
   font-size: 0.72em;
   line-height: 0;
 }
+
+/* ---- Run Samples button (active) ---------------------------------------- */
+
+.problem-workspace-run-btn {
+  border: 1px solid rgba(74, 158, 255, 0.5);
+  background: rgba(74, 158, 255, 0.12);
+  color: var(--ik-cf);
+  border-radius: var(--ik-radius-sm);
+  font-size: 0.78rem;
+  font-weight: 600;
+  padding: 0.35rem 0.68rem;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.problem-workspace-run-btn:hover {
+  background: rgba(74, 158, 255, 0.22);
+  border-color: var(--ik-cf);
+}
+
+/* ---- Results panel ------------------------------------------------------- */
+
+.problem-workspace-run-placeholder {
+  color: var(--ik-muted);
+  font-size: 0.9rem;
+  margin: 0.25rem 0 0;
+}
+
+.problem-workspace-run-error {
+  color: #e05050;
+  font-size: 0.88rem;
+  margin: 0.25rem 0 0;
+}
+
+.problem-workspace-results-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+  margin-top: 0.5rem;
+}
+
+.problem-workspace-result-card {
+  border: 1px solid var(--ik-border);
+  border-radius: var(--ik-radius-sm);
+  padding: 0.75rem 0.85rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+
+.problem-workspace-result-card--ok {
+  border-left: 3px solid #3dba6f;
+}
+
+.problem-workspace-result-card--fail {
+  border-left: 3px solid #e05050;
+}
+
+.problem-workspace-result-card--error {
+  border-left: 3px solid #e09050;
+}
+
+.problem-workspace-result-header {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+}
+
+.problem-workspace-result-sample {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--ik-text);
+}
+
+.problem-workspace-result-status {
+  font-size: 0.78rem;
+  font-weight: 600;
+}
+
+.problem-workspace-result-status--ok {
+  color: #3dba6f;
+}
+
+.problem-workspace-result-status--fail {
+  color: #e05050;
+}
+
+.problem-workspace-result-meta {
+  font-size: 0.74rem;
+  color: var(--ik-muted);
+  margin-left: auto;
+}
+
+.problem-workspace-result-cols {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.6rem;
+}
+
+.problem-workspace-result-col {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  min-width: 0;
+}
+
+.problem-workspace-result-label {
+  font-size: 0.69rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--ik-muted);
+}
+
+.problem-workspace-result-pre {
+  background: #111111;
+  border: 1px solid var(--ik-border);
+  border-radius: var(--ik-radius-sm);
+  padding: 0.4rem 0.55rem;
+  font: 0.8rem/1.45 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+  color: var(--ik-text);
+  margin: 0;
+  white-space: pre;
+  overflow-x: auto;
+  max-height: 140px;
+  overflow-y: auto;
+}
+
+.problem-workspace-result-pre--err {
+  color: #e09050;
+  max-height: 200px;
+}

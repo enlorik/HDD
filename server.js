@@ -12,9 +12,12 @@ import https from 'https';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { parseCFProblemStatement } from './cfStatementParser.js';
+import { parseLimits, runKotlinSamples } from './judge0.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const app = express();
+// Trust the first proxy (Railway's load balancer) so req.ip reflects the real client IP.
+app.set('trust proxy', 1);
 const PORT = process.env.PORT || 3000;
 const DIST_DIR = path.join(__dirname, 'dist');
 const CF_BASE = 'codeforces.com';
@@ -24,35 +27,83 @@ const CF_BASE = 'codeforces.com';
 const INDEX_HTML = fs.readFileSync(path.join(DIST_DIR, 'index.html'), 'utf-8');
 
 // ---------------------------------------------------------------------------
-// Simple in-memory rate limiter for the proxy endpoint.
-// Each IP is allowed at most RATE_LIMIT_MAX requests per RATE_LIMIT_WINDOW_MS.
+// Simple in-memory rate limiter factory.
 // ---------------------------------------------------------------------------
-const RATE_LIMIT_WINDOW_MS = 60_000; // 1 minute
-const RATE_LIMIT_MAX = 60;           // requests per window per IP
-const rateLimitMap = new Map();      // ip -> { count, resetAt }
+function makeRateLimiter(windowMs, max) {
+  const map = new Map();
+  return function rateLimit(req, res, next) {
+    const ip = req.ip || req.socket.remoteAddress || 'unknown';
+    const now = Date.now();
+    const entry = map.get(ip);
 
-function rateLimit(req, res, next) {
-  const ip = req.headers['x-forwarded-for']?.split(',')[0].trim() || req.socket.remoteAddress || 'unknown';
-  const now = Date.now();
-  const entry = rateLimitMap.get(ip);
+    if (!entry || now > entry.resetAt) {
+      map.set(ip, { count: 1, resetAt: now + windowMs });
+      return next();
+    }
 
-  if (!entry || now > entry.resetAt) {
-    rateLimitMap.set(ip, { count: 1, resetAt: now + RATE_LIMIT_WINDOW_MS });
+    if (entry.count >= max) {
+      return res.status(429).json({ error: 'Too many requests – please wait a moment and try again.' });
+    }
+
+    entry.count += 1;
     return next();
-  }
-
-  if (entry.count >= RATE_LIMIT_MAX) {
-    return res.status(429).json({ error: 'Too many requests – please wait a moment and try again.' });
-  }
-
-  entry.count += 1;
-  return next();
+  };
 }
+
+// Proxy endpoints: 60 requests/minute per IP
+const rateLimit = makeRateLimiter(60_000, 60);
+
+// Code execution: much stricter — 10 runs/minute per IP
+const runRateLimit = makeRateLimiter(60_000, 10);
 
 // ---------------------------------------------------------------------------
 // Serve static assets produced by `npm run build`
 // ---------------------------------------------------------------------------
 app.use(express.static(DIST_DIR));
+app.use(express.json({ limit: '256kb' }));
+
+// ---------------------------------------------------------------------------
+// Run Kotlin samples: POST /api/run/kotlin-samples
+// Accepts { code, samples, timeLimit, memoryLimit }, submits to Judge0,
+// polls for results, normalizes output, and returns per-sample verdicts.
+// ---------------------------------------------------------------------------
+app.post('/api/run/kotlin-samples', runRateLimit, async (req, res) => {
+  const { code, samples, timeLimit, memoryLimit } = req.body ?? {};
+
+  if (typeof code !== 'string') {
+    return res.status(400).json({ error: 'code must be a string.' });
+  }
+  if (code.length > 100_000) {
+    return res.status(400).json({ error: 'code exceeds maximum allowed size.' });
+  }
+  if (!Array.isArray(samples)) {
+    return res.status(400).json({ error: 'samples must be an array.' });
+  }
+  if (samples.length === 0) {
+    return res.status(400).json({ error: 'samples must not be empty.' });
+  }
+  if (samples.length > 20) {
+    return res.status(400).json({ error: 'samples must contain at most 20 entries.' });
+  }
+  for (const s of samples) {
+    if (typeof s.input !== 'string' || typeof s.output !== 'string') {
+      return res.status(400).json({ error: 'each sample must have string input and output fields.' });
+    }
+    if (s.input.length > 100_000) {
+      return res.status(400).json({ error: 'sample input exceeds maximum allowed size.' });
+    }
+  }
+
+  const limits = parseLimits(timeLimit, memoryLimit);
+
+  try {
+    const results = await runKotlinSamples(code, samples, limits);
+    return res.json({ results });
+  } catch (err) {
+    console.error('[run] Judge0 error:', err.message);
+    return res.status(502).json({ error: 'Failed to execute code. Please try again.' });
+  }
+});
 
 // ---------------------------------------------------------------------------
 // Problem statement: GET /api/cf/problem/:contestId/:index/statement
