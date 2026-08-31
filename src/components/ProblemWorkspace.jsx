@@ -8,7 +8,9 @@ import {
 import { renderMathInHtml, textToHtml } from '../utils/renderMath';
 import './ProblemWorkspace.css';
 
-const DEFAULT_KOTLIN_STARTER = `fun main() {
+const DEFAULT_KOTLIN_STARTER = `import hdd.algos.*
+
+fun main() {
     // solve here
 }`;
 

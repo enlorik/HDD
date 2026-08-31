@@ -29,6 +29,11 @@ A React + Vite competitive programming dashboard for tracking Codeforces contest
 - Data is saved to `localStorage` under the key `hdd-user-profile` — no account required.
 - The handle is used by the Daily Problems page to fetch your rating and filter solved problems.
 
+### 5. Kotlin Problem Workspace
+- New drafts start with `import hdd.algos.*` and can use the algorithms from [`enlorik/kotlin-cpp`](https://github.com/enlorik/kotlin-cpp) without displaying their implementation in the editor.
+- Immediately before a Judge0 run, the server reads `tools/registry.json`, fetches the registered Kotlin files, removes the HDD-only import, and appends the library to the temporary submission.
+- The expanded source is never saved over the local draft. Library files are cached for five minutes, so updates to `kotlin-cpp` sync automatically without a new HDD deploy.
+
 ## Tech Stack
 
 | Layer | Technology |
@@ -56,6 +61,7 @@ HDD/
 │   │   ├── codeforcesService.js   # Contests, timeline helpers, daily problem logic
 │   │   └── mockCodeforcesData.js  # Fallback mock data for development
 │   └── App.jsx
+├── kotlinLibrary.js # Server-only kotlin-cpp dependency expansion
 ├── server.js        # Express production server + Codeforces API proxy
 ├── railway.json     # Railway deployment config
 └── package.json
@@ -98,6 +104,7 @@ npm run lint
 - Serves the compiled Vite SPA from `dist/`.
 - Proxies `GET /api/cf/:method` to `https://codeforces.com/api/:method`, forwarding any query parameters. This avoids browser CORS restrictions in production.
 - Applies a simple in-memory rate limiter (60 requests/min per IP) to protect the proxy.
+- Expands `hdd.algos` imports from the configured Kotlin library only in the temporary Judge0 submission.
 
 Start with:
 
