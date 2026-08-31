@@ -171,7 +171,14 @@ async function loadLibraryBundle(fetchImpl) {
 function libraryImportPattern(namespace) {
   const escaped = namespace.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
   return new RegExp(
-    `^\\s*import\\s+${escaped}(?:\\.\\*|\\.[A-Za-z_][A-Za-z0-9_]*)?(?:\\s+as\\s+[A-Za-z_][A-Za-z0-9_]*)?\\s*;?\\s*$`,
+    `^\\s*import\\s+${escaped}(?:\\.\\*|\\.[A-Za-z_][A-Za-z0-9_]*)?\\s*;?\\s*$`,
+  );
+}
+
+function aliasedLibraryImportPattern(namespace) {
+  const escaped = namespace.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  return new RegExp(
+    `^\\s*import\\s+${escaped}\\.[A-Za-z_][A-Za-z0-9_]*\\s+as\\s+[A-Za-z_][A-Za-z0-9_]*\\s*;?\\s*$`,
   );
 }
 
@@ -215,7 +222,13 @@ export function resetKotlinLibraryCache() {
 export async function expandKotlinLibrary(code, { fetchImpl = globalThis.fetch } = {}) {
   const namespace = configuredImportNamespace();
   const importPattern = libraryImportPattern(namespace);
+  const aliasPattern = aliasedLibraryImportPattern(namespace);
   const lines = code.replace(/\r\n?/g, '\n').split('\n');
+
+  if (lines.some(line => aliasPattern.test(line))) {
+    throw new Error(`Aliased ${namespace} imports are not supported; use the original symbol name`);
+  }
+
   const usesLibrary = lines.some(line => importPattern.test(line));
 
   if (!usesLibrary) return code;

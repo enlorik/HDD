@@ -73,6 +73,15 @@ describe('expandKotlinLibrary', () => {
     expect(result).toContain('class DSU');
   });
 
+  it('rejects aliased virtual imports instead of silently breaking the alias', async () => {
+    const fetchImpl = vi.fn();
+
+    await expect(
+      expandKotlinLibrary('import hdd.algos.DSU as UF\nfun main() { UF(2) }', { fetchImpl }),
+    ).rejects.toThrow('Aliased hdd.algos imports are not supported');
+    expect(fetchImpl).not.toHaveBeenCalled();
+  });
+
   it('rejects path traversal from a compromised registry', async () => {
     const fetchImpl = vi.fn(async () => response(JSON.stringify({ files: ['../secret.kt'] })));
 
