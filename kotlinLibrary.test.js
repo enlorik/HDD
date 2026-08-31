@@ -1,4 +1,5 @@
 // @vitest-environment node
+import process from 'node:process';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { expandKotlinLibrary, resetKotlinLibraryCache } from './kotlinLibrary.js';

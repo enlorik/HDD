@@ -1,3 +1,6 @@
+import { Buffer } from 'node:buffer';
+import process from 'node:process';
+
 const DEFAULT_REPOSITORY = 'enlorik/kotlin-cpp';
 const DEFAULT_REF = 'main';
 const DEFAULT_IMPORT_NAMESPACE = 'hdd.algos';
