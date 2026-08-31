@@ -1,3 +1,4 @@
+import { expandKotlinLibrary } from './kotlinLibrary.js';
 import { outputsMatch } from './outputNormalize.js';
 
 function judge0Url() {
@@ -118,8 +119,9 @@ export function mapJudge0Result(j0, sampleExpected) {
 export async function runKotlinSamples(code, samples, { cpu_time_limit, memory_limit }) {
   if (!judge0Url()) throw new Error('JUDGE0_URL is not configured');
 
+  const sourceCode = await expandKotlinLibrary(code);
   const submissions = samples.map(s => ({
-    source_code: code,
+    source_code: sourceCode,
     language_id: kotlinLanguageId(),
     stdin: s.input,
     cpu_time_limit,
