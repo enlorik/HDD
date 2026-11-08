@@ -118,9 +118,21 @@ function Timeline() {
     return match ? match[0] : '#4a9eff';
   };
 
-  const { packed: packedEvents, laneCount } = packIntoLanes(visibleEvents);
   const rowHeight = 56;
   const todayColumn = 4; // visible weeks start at currentWeek-3, so "now" is the 4th column
+
+  // Only events whose [startWeek, startWeek+duration) interval actually
+  // overlaps the displayed window belong on the grid at all - without this,
+  // a contest starting 7+ weeks out would get force-placed into a column
+  // beyond the 10 explicit grid columns, silently misaligning everything
+  // after it (caught in code review, not by eye).
+  const windowStart = 1 - todayColumn;
+  const windowEnd = weeksToShow - todayColumn + 1;
+  const windowEvents = visibleEvents.filter(
+    e => e.startWeek < windowEnd && e.startWeek + e.duration > windowStart
+  );
+
+  const { packed: packedEvents, laneCount } = packIntoLanes(windowEvents);
 
   return (
     <div className="timeline-container">
