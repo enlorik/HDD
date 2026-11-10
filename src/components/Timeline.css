@@ -51,11 +51,12 @@
 }
 .ec-manage-btn:hover { background: var(--ik-card); }
 
-/* ── Calendar grid — one shared grid for everything (header row, multi-week
-   rows, timed rows) so there's only one set of week-column tracks and it's
-   structurally impossible for them to drift out of alignment with each
-   other. The label column is grid-column 1, pinned via position:sticky so
-   it stays visible while the week columns scroll past it. ── */
+/* ── Calendar grid — one shared grid for the week columns (header row,
+   multi-week rows, timed rows) so there's only one set of week-column
+   tracks and it's structurally impossible for them to drift out of
+   alignment with each other. The time-label column is a real, separate,
+   non-scrolling strip beside the week grid (not inside it, not sticky) -
+   see the comment in Timeline.jsx for why sticky was tried and rejected. */
 .timeline-content { max-width: 1400px; margin: 0 auto; }
 
 .ec-wrap {
@@ -65,26 +66,40 @@
   padding: 1.5rem;
 }
 
-/* The grid scrolls horizontally below ~900px - a weeks-wide Gantt can't
-   meaningfully compress onto a phone screen, so it scrolls like any
-   calendar/schedule app does on mobile instead of squashing text
-   illegibly or overflowing the page. The sticky label column stays put. */
-.ec-scroll { overflow-x: auto; }
+.ec-outer { display: flex; gap: 6px; }
+
+.ec-label-strip {
+  flex: none;
+  width: 70px;
+  display: grid;
+  gap: 6px;
+}
+.ec-label-cell { background: transparent; }
+.time-row-label {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.74rem;
+  font-weight: 700;
+  color: var(--ik-muted);
+  background-color: var(--ik-card);
+  border: 1px solid var(--ik-border);
+  border-radius: var(--ik-radius-sm);
+}
+
+/* Only the week grid scrolls horizontally below ~900px - a weeks-wide
+   Gantt can't meaningfully compress onto a phone screen, so it scrolls
+   like any calendar/schedule app does on mobile instead of squashing
+   text illegibly or overflowing the page. The label strip beside it
+   never scrolls, so times stay visible no matter where in the week
+   range the user has scrolled to. */
+.ec-scroll { flex: 1; min-width: 0; overflow-x: auto; }
 .ec-scroll-inner { width: 100%; }
 
 .ec-grid {
   position: relative;
   display: grid;
   gap: 6px;
-}
-
-.ec-label-cell { background: transparent; }
-.ec-label-cell--sticky,
-.time-row-label {
-  position: sticky;
-  left: 0;
-  z-index: 15;
-  background-color: var(--ik-surface);
 }
 
 .ec-divider-line {
@@ -106,21 +121,6 @@
   margin-bottom: 0.2rem;
 }
 .week-date { font-size: 0.72rem; color: var(--ik-muted); }
-
-/* The label for a timed row IS its start time - not text glued onto each
-   bubble, which would eat into the already-narrow pill and truncate
-   titles harder than before. */
-.time-row-label {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 0.74rem;
-  font-weight: 700;
-  color: var(--ik-muted);
-  background-color: var(--ik-card);
-  border: 1px solid var(--ik-border);
-  border-radius: var(--ik-radius-sm);
-}
 
 .today-line {
   position: absolute;
