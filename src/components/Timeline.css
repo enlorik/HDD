@@ -86,6 +86,14 @@
   display: grid;
   gap: 6px;
 }
+/* A quiet separator between the multi-week and timed groups - not a
+   labeled section, just enough to read as two kinds of rows within one
+   calendar rather than a new layout. */
+.ec-grid--divider {
+  border-top: 1px solid var(--ik-border);
+  margin-top: 0.75rem;
+  padding-top: calc(0.75rem + 6px);
+}
 
 .today-line {
   position: absolute;
@@ -133,6 +141,14 @@
   text-overflow: ellipsis;
   flex: 1;
   min-width: 0;
+}
+.event-time {
+  color: rgba(0,0,0,0.65);
+  font-weight: 700;
+  font-size: 0.72rem;
+  white-space: nowrap;
+  flex: none;
+  margin-right: 0.4rem;
 }
 
 /* Custom styled tooltip — shows the full, untruncated title on hover/focus,

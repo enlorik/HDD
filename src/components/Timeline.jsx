@@ -132,7 +132,20 @@ function Timeline() {
     e => e.startWeek < windowEnd && e.startWeek + e.duration > windowStart
   );
 
-  const { packed: packedEvents, laneCount } = packIntoLanes(windowEvents);
+  // Multi-week ("practice marathon") events and single-week timed contests
+  // are packed into two independent lane pools and rendered as two stacked
+  // grids, so a long-running event never competes for a lane with a
+  // same-week timed round - each group gets exactly as many rows as it
+  // actually needs, nothing fixed or empty.
+  const multiWeekEvents = windowEvents.filter(e => e.duration >= 2);
+  const timedEvents = windowEvents.filter(e => e.duration === 1);
+  const { packed: multiPacked, laneCount: multiLaneCount } = packIntoLanes(multiWeekEvents);
+  const { packed: timedPacked, laneCount: timedLaneCount } = packIntoLanes(timedEvents);
+
+  const formatEventTime = (startDate) =>
+    startDate
+      ? new Date(startDate).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })
+      : null;
 
   return (
     <div className="timeline-container">
@@ -189,50 +202,103 @@ function Timeline() {
                 ))}
               </div>
 
-              <div
-                className="ec-grid"
-                style={{
-                  gridTemplateColumns: `repeat(${weeksToShow}, 1fr)`,
-                  gridTemplateRows: `repeat(${Math.max(laneCount, 1)}, ${rowHeight}px)`
-                }}
-              >
-            <div
-              className="today-line"
-              style={{ left: `${((todayColumn - 1) / weeksToShow) * 100}%` }}
-            >
-              <div className="today-label">Today</div>
-            </div>
-
-            {packedEvents.map(event => {
-              const rawStart = event.startWeek + todayColumn;
-              const start = Math.max(1, rawStart);
-              const end = Math.min(weeksToShow + 1, rawStart + event.duration);
-              const span = Math.max(1, end - start);
-
-              let tooltipText = event.title;
-              if (event.type === 'codeforces') {
-                tooltipText += ` (${event.contestType})`;
-                tooltipText += ` · Phase: ${event.phase}`;
-              }
-
-              return (
+              {multiPacked.length > 0 && (
                 <div
-                  key={event.id}
-                  className="ec-bar"
+                  className="ec-grid"
                   style={{
-                    gridColumn: `${start} / span ${span}`,
-                    gridRow: event.lane + 1,
-                    background: event.gradient
+                    gridTemplateColumns: `repeat(${weeksToShow}, 1fr)`,
+                    gridTemplateRows: `repeat(${Math.max(multiLaneCount, 1)}, ${rowHeight}px)`
                   }}
-                  onClick={() => event.detailLink && window.open(event.detailLink, '_blank', 'noopener,noreferrer')}
-                  title={tooltipText}
                 >
-                  <span className="event-title">{event.title}</span>
-                  <div className="ec-tooltip">{tooltipText}</div>
+                  <div
+                    className="today-line"
+                    style={{ left: `${((todayColumn - 1) / weeksToShow) * 100}%` }}
+                  >
+                    <div className="today-label">Today</div>
+                  </div>
+
+                  {multiPacked.map(event => {
+                    const rawStart = event.startWeek + todayColumn;
+                    const start = Math.max(1, rawStart);
+                    const end = Math.min(weeksToShow + 1, rawStart + event.duration);
+                    const span = Math.max(1, end - start);
+
+                    let tooltipText = event.title;
+                    if (event.type === 'codeforces') {
+                      tooltipText += ` (${event.contestType})`;
+                      tooltipText += ` · Phase: ${event.phase}`;
+                    }
+
+                    return (
+                      <div
+                        key={event.id}
+                        className="ec-bar"
+                        style={{
+                          gridColumn: `${start} / span ${span}`,
+                          gridRow: event.lane + 1,
+                          background: event.gradient
+                        }}
+                        onClick={() => event.detailLink && window.open(event.detailLink, '_blank', 'noopener,noreferrer')}
+                        title={tooltipText}
+                      >
+                        <span className="event-title">{event.title}</span>
+                        <div className="ec-tooltip">{tooltipText}</div>
+                      </div>
+                    );
+                  })}
                 </div>
-              );
-            })}
-              </div>
+              )}
+
+              {timedPacked.length > 0 && (
+                <div
+                  className={`ec-grid ec-grid--timed ${multiPacked.length > 0 ? 'ec-grid--divider' : ''}`}
+                  style={{
+                    gridTemplateColumns: `repeat(${weeksToShow}, 1fr)`,
+                    gridTemplateRows: `repeat(${Math.max(timedLaneCount, 1)}, ${rowHeight}px)`
+                  }}
+                >
+                  {multiPacked.length === 0 && (
+                    <div
+                      className="today-line"
+                      style={{ left: `${((todayColumn - 1) / weeksToShow) * 100}%` }}
+                    >
+                      <div className="today-label">Today</div>
+                    </div>
+                  )}
+
+                  {timedPacked.map(event => {
+                    const rawStart = event.startWeek + todayColumn;
+                    const start = Math.max(1, rawStart);
+                    const end = Math.min(weeksToShow + 1, rawStart + event.duration);
+                    const span = Math.max(1, end - start);
+                    const timeLabel = formatEventTime(event.startDate);
+
+                    let tooltipText = event.title;
+                    if (event.type === 'codeforces') {
+                      tooltipText += ` (${event.contestType})`;
+                      tooltipText += ` · Phase: ${event.phase}`;
+                    }
+
+                    return (
+                      <div
+                        key={event.id}
+                        className="ec-bar"
+                        style={{
+                          gridColumn: `${start} / span ${span}`,
+                          gridRow: event.lane + 1,
+                          background: event.gradient
+                        }}
+                        onClick={() => event.detailLink && window.open(event.detailLink, '_blank', 'noopener,noreferrer')}
+                        title={tooltipText}
+                      >
+                        {timeLabel && <span className="event-time">{timeLabel}</span>}
+                        <span className="event-title">{event.title}</span>
+                        <div className="ec-tooltip">{tooltipText}</div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
             </div>
           </div>
         </div>
