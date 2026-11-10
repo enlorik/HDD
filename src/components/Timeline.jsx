@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import './Timeline.css';
 import { fetchCodeforcesContests, formatContestsForTimeline } from '../services/codeforcesService';
 
@@ -31,6 +31,7 @@ function Timeline() {
   const [codeforcesContests, setCodeforcesContests] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const ecScrollRef = useRef(null);
   // Map of eventId → boolean (true = shown on calendar, false = hidden)
   const [enabledEvents, setEnabledEvents] = useState(() => {
     try {
@@ -147,6 +148,19 @@ function Timeline() {
       ? new Date(startDate).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })
       : null;
 
+  // On a narrow viewport the grid is wider than the visible scroll container
+  // and starts scrolled to week 1 by default - today and every upcoming
+  // contest sit off-screen to the right until the user manually scrolls
+  // (caught in code review: with all-upcoming data this makes the calendar
+  // look empty on first open). Scroll to put one week of past context, then
+  // today, at the left edge instead.
+  useEffect(() => {
+    if (loading || !ecScrollRef.current) return;
+    const el = ecScrollRef.current;
+    const columnWidth = el.scrollWidth / weeksToShow;
+    el.scrollLeft = Math.max(0, (todayColumn - 2) * columnWidth);
+  }, [loading, todayColumn, weeksToShow]);
+
   return (
     <div className="timeline-container">
       {/* Header: title + toggle for the event opt-in drawer */}
@@ -189,7 +203,7 @@ function Timeline() {
               Gantt can't meaningfully compress onto a phone screen, so it scrolls
               like any calendar/schedule app does on mobile instead of squashing
               text illegibly or overflowing the page. */}
-          <div className="ec-scroll">
+          <div className="ec-scroll" ref={ecScrollRef}>
             <div
               className="ec-scroll-inner"
               style={{ minWidth: `${weeksToShow * 110}px` }}
