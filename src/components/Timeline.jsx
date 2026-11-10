@@ -180,8 +180,9 @@ function Timeline() {
         </div>
       )}
 
-      {/* Gantt-style events calendar: weeks as grid columns, overlapping
-          events packed into their own lane (grid row) so nothing collides */}
+      {/* Gantt-style events calendar: weeks as grid columns, multi-week and
+          timed events packed into two independent sets of lanes (grid rows)
+          so neither group collides with or crowds out the other */}
       <div className="timeline-content">
         <div className="ec-wrap">
           {/* Both rows scroll together horizontally below ~900px - a weeks-wide
