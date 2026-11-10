@@ -51,8 +51,11 @@
 }
 .ec-manage-btn:hover { background: var(--ik-card); }
 
-/* ── Calendar grid — weeks as columns, multi-week and timed events packed
-   into two independent sets of overlap-packed lanes (grid rows) ── */
+/* ── Calendar grid — one shared grid for everything (header row, multi-week
+   rows, timed rows) so there's only one set of week-column tracks and it's
+   structurally impossible for them to drift out of alignment with each
+   other. The label column is grid-column 1, pinned via position:sticky so
+   it stays visible while the week columns scroll past it. ── */
 .timeline-content { max-width: 1400px; margin: 0 auto; }
 
 .ec-wrap {
@@ -62,42 +65,32 @@
   padding: 1.5rem;
 }
 
-/* Both rows scroll together horizontally below ~900px - a weeks-wide
-   Gantt can't meaningfully compress onto a phone screen, so it scrolls
-   like any calendar/schedule app does on mobile instead of squashing
-   text illegibly or overflowing the page. */
+/* The grid scrolls horizontally below ~900px - a weeks-wide Gantt can't
+   meaningfully compress onto a phone screen, so it scrolls like any
+   calendar/schedule app does on mobile instead of squashing text
+   illegibly or overflowing the page. The sticky label column stays put. */
 .ec-scroll { overflow-x: auto; }
 .ec-scroll-inner { width: 100%; }
 
-/* Each row-group (week headers / multi-week bars / timed bars) reserves a
-   label-column strip via margin-left on the grid, with the label itself
-   absolutely positioned over that margin. */
-.ec-row { position: relative; }
-.ec-label-col {
-  position: absolute;
-  left: 0;
-  top: 0;
-  width: 70px;
-  display: grid;
-  gap: 6px;
-}
-/* A quiet separator between the multi-week and timed groups - not a
-   labeled section, just enough to read as two kinds of rows within one
-   calendar rather than a new layout. */
-.ec-row--divider {
-  border-top: 1px solid var(--ik-border);
-  margin-top: 0.75rem;
-  padding-top: calc(0.75rem + 6px);
-}
-
 .ec-grid {
   position: relative;
-  margin-left: 76px;
   display: grid;
   gap: 6px;
 }
 
-.ec-week-headers { margin-left: 76px; display: grid; gap: 0.5rem; margin-bottom: 1.25rem; }
+.ec-label-cell { background: transparent; }
+.ec-label-cell--sticky,
+.time-row-label {
+  position: sticky;
+  left: 0;
+  z-index: 15;
+  background-color: var(--ik-surface);
+}
+
+.ec-divider-line {
+  align-self: center;
+  border-top: 1px solid var(--ik-border);
+}
 
 .week-header {
   background-color: var(--ik-card);
@@ -304,7 +297,6 @@
   .timeline-container { padding: 1rem 1rem 2rem; }
   .ec-header { flex-wrap: wrap; gap: 0.75rem; }
   .ec-wrap { padding: 1rem; border-radius: var(--ik-radius-sm); }
-  .ec-week-headers { gap: 0.3rem; }
   .week-header { padding: 0.4rem 0.3rem; }
   .week-label { font-size: 0.7rem; }
   .week-date { font-size: 0.62rem; }
