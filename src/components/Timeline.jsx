@@ -5,9 +5,29 @@ import { fetchCodeforcesContests, formatContestsForTimeline } from '../services/
 // localStorage key for persisting timeline event opt-in state
 const STORAGE_KEY = 'timeline-event-enabled';
 
+// Greedy interval-packing: assigns each event the lowest-numbered lane whose
+// last-placed event has already ended, so overlapping events stack into new
+// lanes instead of colliding, and non-overlapping events share a lane.
+function packIntoLanes(events) {
+  const sorted = [...events].sort((a, b) => a.startWeek - b.startWeek);
+  const laneEnds = [];
+  const packed = sorted.map(event => {
+    const end = event.startWeek + event.duration;
+    let lane = laneEnds.findIndex(laneEnd => laneEnd <= event.startWeek);
+    if (lane === -1) {
+      lane = laneEnds.length;
+      laneEnds.push(end);
+    } else {
+      laneEnds[lane] = end;
+    }
+    return { ...event, lane };
+  });
+  return { packed, laneCount: laneEnds.length };
+}
+
 function Timeline() {
   const [currentDate] = useState(new Date());
-  const [activeTab, setActiveTab] = useState('events-calendar');
+  const [showEventManager, setShowEventManager] = useState(false);
   const [codeforcesContests, setCodeforcesContests] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -98,27 +118,33 @@ function Timeline() {
     return match ? match[0] : '#4a9eff';
   };
 
+  const rowHeight = 56;
+  const todayColumn = 4; // visible weeks start at currentWeek-3, so "now" is the 4th column
+
+  // Only events whose [startWeek, startWeek+duration) interval actually
+  // overlaps the displayed window belong on the grid at all - without this,
+  // a contest starting 7+ weeks out would get force-placed into a column
+  // beyond the 10 explicit grid columns, silently misaligning everything
+  // after it (caught in code review, not by eye).
+  const windowStart = 1 - todayColumn;
+  const windowEnd = weeksToShow - todayColumn + 1;
+  const windowEvents = visibleEvents.filter(
+    e => e.startWeek < windowEnd && e.startWeek + e.duration > windowStart
+  );
+
+  const { packed: packedEvents, laneCount } = packIntoLanes(windowEvents);
+
   return (
     <div className="timeline-container">
-      {/* Tab Navigation */}
-      <div className="timeline-tabs">
-        <button 
-          className={`timeline-tab ${activeTab === 'events-calendar' ? 'active' : ''}`}
-          onClick={() => setActiveTab('events-calendar')}
+      {/* Header: title + toggle for the event opt-in drawer */}
+      <div className="ec-header">
+        <h2 className="ec-title">Events Calendar</h2>
+        <button
+          className="ec-manage-btn"
+          onClick={() => setShowEventManager(v => !v)}
+          aria-expanded={showEventManager}
         >
-          Events Calendar
-        </button>
-        <button 
-          className={`timeline-tab ${activeTab === 'schedule' ? 'active' : ''}`}
-          onClick={() => setActiveTab('schedule')}
-        >
-          Schedule
-        </button>
-        <button 
-          className={`timeline-tab ${activeTab === 'timeline' ? 'active' : ''}`}
-          onClick={() => setActiveTab('timeline')}
-        >
-          Timeline
+          {showEventManager ? 'Close' : 'Manage events'}
         </button>
       </div>
 
@@ -141,111 +167,124 @@ function Timeline() {
         </div>
       )}
 
-      {/* Events Calendar Tab */}
-      {activeTab === 'events-calendar' && (
-        <div className="timeline-content">
-          <div className="timeline-grid">
-            {/* Week headers */}
-            <div className="week-headers">
-              {weeks.map((week, index) => (
-                <div key={week} className="week-header">
-                  <div className="week-label">Week {week}</div>
-                  <div className="week-date">{getWeekLabel(index - 3)}</div>
-                </div>
-              ))}
-            </div>
+      {/* Gantt-style events calendar: weeks as grid columns, overlapping
+          events packed into their own lane (grid row) so nothing collides */}
+      <div className="timeline-content">
+        <div className="ec-wrap">
+          {/* Both rows scroll together horizontally below ~900px - a weeks-wide
+              Gantt can't meaningfully compress onto a phone screen, so it scrolls
+              like any calendar/schedule app does on mobile instead of squashing
+              text illegibly or overflowing the page. */}
+          <div className="ec-scroll">
+            <div
+              className="ec-scroll-inner"
+              style={{ minWidth: `${weeksToShow * 110}px` }}
+            >
+              <div className="ec-week-headers" style={{ gridTemplateColumns: `repeat(${weeksToShow}, 1fr)` }}>
+                {weeks.map((week, index) => (
+                  <div key={week} className="week-header">
+                    <div className="week-label">Week {week}</div>
+                    <div className="week-date">{getWeekLabel(index - 3)}</div>
+                  </div>
+                ))}
+              </div>
 
-            {/* Today line */}
-            <div className="today-line" style={{ left: `${(3 / weeksToShow) * 100}%` }}>
+              <div
+                className="ec-grid"
+                style={{
+                  gridTemplateColumns: `repeat(${weeksToShow}, 1fr)`,
+                  gridTemplateRows: `repeat(${Math.max(laneCount, 1)}, ${rowHeight}px)`
+                }}
+              >
+            <div
+              className="today-line"
+              style={{ left: `${((todayColumn - 1) / weeksToShow) * 100}%` }}
+            >
               <div className="today-label">Today</div>
             </div>
 
-            {/* Events (only those opted-in via the Timeline tab) */}
-            <div className="events-container">
-              {visibleEvents.map((event, index) => {
-                const leftPercent = ((event.startWeek + 3) / weeksToShow) * 100;
-                const widthPercent = (event.duration / weeksToShow) * 100;
+            {packedEvents.map(event => {
+              const rawStart = event.startWeek + todayColumn;
+              const start = Math.max(1, rawStart);
+              const end = Math.min(weeksToShow + 1, rawStart + event.duration);
+              const span = Math.max(1, end - start);
 
-                // Build tooltip text
-                let tooltipText = event.title;
-                if (event.type === 'codeforces') {
-                  tooltipText += ` (${event.contestType})`;
-                  tooltipText += `\nPhase: ${event.phase}`;
-                }
-                
+              let tooltipText = event.title;
+              if (event.type === 'codeforces') {
+                tooltipText += ` (${event.contestType})`;
+                tooltipText += ` · Phase: ${event.phase}`;
+              }
+
+              return (
+                <div
+                  key={event.id}
+                  className="ec-bar"
+                  style={{
+                    gridColumn: `${start} / span ${span}`,
+                    gridRow: event.lane + 1,
+                    background: event.gradient
+                  }}
+                  onClick={() => event.detailLink && window.open(event.detailLink, '_blank', 'noopener,noreferrer')}
+                  title={tooltipText}
+                >
+                  <span className="event-title">{event.title}</span>
+                  <div className="ec-tooltip">{tooltipText}</div>
+                </div>
+              );
+            })}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Slide-over drawer: opt-in/opt-out checklist, was formerly its own "Timeline" tab */}
+      {showEventManager && (
+        <>
+          <div className="ec-drawer-overlay" onClick={() => setShowEventManager(false)} />
+          <div className="ec-drawer">
+            <div className="ec-drawer-header">
+              <h3>Manage events</h3>
+              <button className="ec-drawer-close" onClick={() => setShowEventManager(false)} aria-label="Close">✕</button>
+            </div>
+            <div className="tl-event-list">
+              {codeforcesContests.length === 0 && !loading && (
+                <p className="tl-empty">No events to display.</p>
+              )}
+              {codeforcesContests.map((event) => {
+                const enabled = isEventEnabled(enabledEvents, event.id);
+                const accent = getAccentColor(event);
                 return (
                   <div
                     key={event.id}
-                    className="event-bar"
-                    style={{
-                      left: `${leftPercent}%`,
-                      width: `${widthPercent}%`,
-                      background: event.gradient,
-                      top: `${index * 70 + 10}px`
-                    }}
-                    onClick={() => event.detailLink && window.open(event.detailLink, '_blank', 'noopener,noreferrer')}
-                    title={tooltipText}
+                    className={`tl-bubble ${enabled ? 'tl-bubble--enabled' : 'tl-bubble--disabled'}`}
+                    style={{ '--accent': accent }}
+                    onClick={() => toggleEvent(event.id)}
+                    title={enabled ? 'Click to remove from calendar' : 'Click to add to calendar'}
                   >
-                    <span className="event-title">{event.title}</span>
+                    <input
+                      type="checkbox"
+                      className="tl-checkbox"
+                      checked={enabled}
+                      onChange={() => toggleEvent(event.id)}
+                      onClick={(e) => e.stopPropagation()}
+                      aria-label={`Toggle "${event.title}" on calendar`}
+                    />
+                    <div className="tl-bubble-body">
+                      <span className="tl-bubble-title">{event.title}</span>
+                      <span className="tl-bubble-meta">
+                        {event.contestType} &middot; {event.phase} &middot;{' '}
+                        {event.startDate
+                          ? new Date(event.startDate).toLocaleDateString()
+                          : 'TBA'}
+                      </span>
+                    </div>
                   </div>
                 );
               })}
             </div>
           </div>
-        </div>
-      )}
-
-      {/* Timeline Tab — event list with opt-in checkboxes and click-to-remove */}
-      {activeTab === 'timeline' && (
-        <div className="tl-event-list">
-          {codeforcesContests.length === 0 && !loading && (
-            <p className="tl-empty">No events to display.</p>
-          )}
-          {codeforcesContests.map((event) => {
-            const enabled = isEventEnabled(enabledEvents, event.id);
-            const accent = getAccentColor(event);
-            return (
-              <div
-                key={event.id}
-                className={`tl-bubble ${enabled ? 'tl-bubble--enabled' : 'tl-bubble--disabled'}`}
-                style={{ '--accent': accent }}
-                /* Clicking the bubble toggles the event off/on the calendar */
-                onClick={() => toggleEvent(event.id)}
-                title={enabled ? 'Click to remove from calendar' : 'Click to add to calendar'}
-              >
-                {/* Checkbox to opt-in / opt-out.
-                    onChange handles checkbox-click toggle;
-                    onClick stops propagation so the bubble's onClick doesn't fire too. */}
-                <input
-                  type="checkbox"
-                  className="tl-checkbox"
-                  checked={enabled}
-                  onChange={() => toggleEvent(event.id)}
-                  onClick={(e) => e.stopPropagation()}
-                  aria-label={`Toggle "${event.title}" on calendar`}
-                />
-                <div className="tl-bubble-body">
-                  <span className="tl-bubble-title">{event.title}</span>
-                  <span className="tl-bubble-meta">
-                    {event.contestType} &middot; {event.phase} &middot;{' '}
-                    {event.startDate
-                      ? new Date(event.startDate).toLocaleDateString()
-                      : 'TBA'}
-                  </span>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      )}
-
-      {/* Schedule Tab — placeholder */}
-      {activeTab === 'schedule' && (
-        <div className="timeline-content">
-          <div className="timeline-status">
-            <p>Schedule view coming soon.</p>
-          </div>
-        </div>
+        </>
       )}
     </div>
   );
