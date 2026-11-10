@@ -51,8 +51,8 @@
 }
 .ec-manage-btn:hover { background: var(--ik-card); }
 
-/* ── Calendar grid — weeks as rows (unbounded, scrolls vertically like the
-   rest of the page), overlap-packed lanes as columns (bounded, usually 1-2) ── */
+/* ── Calendar grid — weeks as columns, multi-week and timed events packed
+   into two independent sets of overlap-packed lanes (grid rows) ── */
 .timeline-content { max-width: 1400px; margin: 0 auto; }
 
 .ec-wrap {
@@ -62,9 +62,10 @@
   padding: 1.5rem;
 }
 
-/* Horizontal scroll is only a safety net for a rare lane-count spike -
-   with 1-2 lanes (the normal case) ec-scroll-inner never exceeds its
-   container and this never activates. */
+/* Both rows scroll together horizontally below ~900px - a weeks-wide
+   Gantt can't meaningfully compress onto a phone screen, so it scrolls
+   like any calendar/schedule app does on mobile instead of squashing
+   text illegibly or overflowing the page. */
 .ec-scroll { overflow-x: auto; }
 .ec-scroll-inner { width: 100%; }
 
@@ -73,43 +74,51 @@
   display: grid;
   gap: 6px;
 }
+/* A quiet separator between the multi-week and timed groups - not a
+   labeled section, just enough to read as two kinds of rows within one
+   calendar rather than a new layout. */
+.ec-grid--divider {
+  border-top: 1px solid var(--ik-border);
+  margin-top: 0.75rem;
+  padding-top: calc(0.75rem + 6px);
+}
 
-.week-row-label {
-  position: relative;
+.ec-week-headers { display: grid; gap: 0.5rem; margin-bottom: 1.25rem; }
+
+.week-header {
   background-color: var(--ik-card);
   border: 1px solid var(--ik-border);
   border-radius: var(--ik-radius-sm);
-  padding: 0.4rem 0.6rem;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-}
-.week-row-label--today {
-  border-color: var(--ik-red);
+  padding: 0.5rem 0.75rem;
+  text-align: center;
 }
 .week-label {
   font-weight: 700;
   color: var(--ik-text);
-  font-size: 0.78rem;
+  font-size: 0.82rem;
+  margin-bottom: 0.2rem;
 }
-.week-date { font-size: 0.68rem; color: var(--ik-muted); }
-.today-badge {
+.week-date { font-size: 0.72rem; color: var(--ik-muted); }
+
+.today-line {
   position: absolute;
-  top: 50%; right: -8px;
-  transform: translate(100%, -50%);
+  top: 0; bottom: 0;
+  width: 2px;
   background-color: var(--ik-red);
-  color: #fff;
-  padding: 2px 8px;
-  border-radius: 999px;
-  font-size: 0.64rem;
-  font-weight: 700;
-  white-space: nowrap;
+  z-index: 10;
   box-shadow: 0 0 8px rgba(255,77,77,0.5);
 }
-
-.today-row-highlight {
-  background-color: rgba(255,77,77,0.06);
-  border-radius: var(--ik-radius-sm);
+.today-label {
+  position: absolute;
+  top: -28px; left: 50%;
+  transform: translateX(-50%);
+  background-color: var(--ik-red);
+  color: #fff;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  white-space: nowrap;
 }
 
 .ec-bar {
@@ -137,6 +146,14 @@
   text-overflow: ellipsis;
   flex: 1;
   min-width: 0;
+}
+.event-time {
+  color: rgba(0,0,0,0.65);
+  font-weight: 700;
+  font-size: 0.72rem;
+  white-space: nowrap;
+  flex: none;
+  margin-right: 0.4rem;
 }
 
 /* Custom styled tooltip — shows the full, untruncated title on hover/focus,
@@ -266,12 +283,13 @@
   .timeline-container { padding: 1rem 1rem 2rem; }
   .ec-header { flex-wrap: wrap; gap: 0.75rem; }
   .ec-wrap { padding: 1rem; border-radius: var(--ik-radius-sm); }
-  .week-row-label { padding: 0.3rem 0.4rem; }
-  .week-label { font-size: 0.68rem; }
-  .week-date { font-size: 0.58rem; }
-  .today-badge { display: none; } /* the red border on the label row is enough at this width */
-  .ec-bar { padding: 0.4rem 0.7rem; }
+  .ec-week-headers { gap: 0.3rem; }
+  .week-header { padding: 0.4rem 0.3rem; }
+  .week-label { font-size: 0.7rem; }
+  .week-date { font-size: 0.62rem; }
+  .ec-bar { min-height: 38px; padding: 0.4rem 0.7rem; }
   .event-title { font-size: 0.74rem; }
+  .event-time { font-size: 0.66rem; }
   .tl-bubble { padding: 0.7rem 1rem; }
   .tl-bubble-title { font-size: 0.84rem; }
   .ec-drawer { padding: 1rem; }
