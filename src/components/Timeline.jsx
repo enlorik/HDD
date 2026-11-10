@@ -118,20 +118,29 @@ function Timeline() {
     return match ? match[0] : '#4a9eff';
   };
 
-  const rowHeight = 56;
-  const todayColumn = 4; // visible weeks start at currentWeek-3, so "now" is the 4th column
+  const weekRowHeight = 64;
+  const labelColWidth = 100;
+  const laneColWidth = 140;
+  const todayRow = 4; // visible weeks start at currentWeek-3, so "now" is the 4th row
 
   // Only events whose [startWeek, startWeek+duration) interval actually
   // overlaps the displayed window belong on the grid at all - without this,
-  // a contest starting 7+ weeks out would get force-placed into a column
-  // beyond the 10 explicit grid columns, silently misaligning everything
-  // after it (caught in code review, not by eye).
-  const windowStart = 1 - todayColumn;
-  const windowEnd = weeksToShow - todayColumn + 1;
+  // a contest starting 7+ weeks out would get force-placed into a row
+  // beyond the 10 explicit grid rows, silently misaligning everything
+  // after it (caught in code review, not by eye, on the old column-based
+  // version of this same bug - same guard applies here, just transposed).
+  const windowStart = 1 - todayRow;
+  const windowEnd = weeksToShow - todayRow + 1;
   const windowEvents = visibleEvents.filter(
     e => e.startWeek < windowEnd && e.startWeek + e.duration > windowStart
   );
 
+  // Weeks are now the (unbounded, naturally-scrollable) vertical axis and
+  // lanes are the (bounded - almost always 1-2, rarely 3+) horizontal axis.
+  // A multi-week event becomes grid-row: start/span duration - the exact
+  // same mechanic the old column-based version used for grid-column, just
+  // transposed, so multi-week "practice contest" events need no special
+  // case at all.
   const { packed: packedEvents, laneCount } = packIntoLanes(windowEvents);
 
   return (
@@ -167,71 +176,73 @@ function Timeline() {
         </div>
       )}
 
-      {/* Gantt-style events calendar: weeks as grid columns, overlapping
-          events packed into their own lane (grid row) so nothing collides */}
+      {/* Gantt-style events calendar: weeks as grid rows (the unbounded axis,
+          scrolls vertically like the rest of the page), lanes as grid columns
+          (the bounded axis - usually 1-2, rarely 3+ simultaneous events) */}
       <div className="timeline-content">
         <div className="ec-wrap">
-          {/* Both rows scroll together horizontally below ~900px - a weeks-wide
-              Gantt can't meaningfully compress onto a phone screen, so it scrolls
-              like any calendar/schedule app does on mobile instead of squashing
-              text illegibly or overflowing the page. */}
+          {/* Horizontal scroll is a safety net for a rare lane-count spike,
+              not the primary interaction - most of the time laneCount is
+              1-2 and this container never needs to scroll at all. */}
           <div className="ec-scroll">
             <div
               className="ec-scroll-inner"
-              style={{ minWidth: `${weeksToShow * 110}px` }}
+              style={{ minWidth: `${labelColWidth + Math.max(laneCount, 1) * laneColWidth}px` }}
             >
-              <div className="ec-week-headers" style={{ gridTemplateColumns: `repeat(${weeksToShow}, 1fr)` }}>
-                {weeks.map((week, index) => (
-                  <div key={week} className="week-header">
-                    <div className="week-label">Week {week}</div>
-                    <div className="week-date">{getWeekLabel(index - 3)}</div>
-                  </div>
-                ))}
-              </div>
-
               <div
                 className="ec-grid"
                 style={{
-                  gridTemplateColumns: `repeat(${weeksToShow}, 1fr)`,
-                  gridTemplateRows: `repeat(${Math.max(laneCount, 1)}, ${rowHeight}px)`
+                  gridTemplateColumns: `${labelColWidth}px repeat(${Math.max(laneCount, 1)}, minmax(${laneColWidth}px, 1fr))`,
+                  gridTemplateRows: `repeat(${weeksToShow}, ${weekRowHeight}px)`
                 }}
               >
-            <div
-              className="today-line"
-              style={{ left: `${((todayColumn - 1) / weeksToShow) * 100}%` }}
-            >
-              <div className="today-label">Today</div>
-            </div>
-
-            {packedEvents.map(event => {
-              const rawStart = event.startWeek + todayColumn;
-              const start = Math.max(1, rawStart);
-              const end = Math.min(weeksToShow + 1, rawStart + event.duration);
-              const span = Math.max(1, end - start);
-
-              let tooltipText = event.title;
-              if (event.type === 'codeforces') {
-                tooltipText += ` (${event.contestType})`;
-                tooltipText += ` · Phase: ${event.phase}`;
-              }
-
-              return (
+                {/* Highlight the current week's full row before anything else renders on top */}
                 <div
-                  key={event.id}
-                  className="ec-bar"
-                  style={{
-                    gridColumn: `${start} / span ${span}`,
-                    gridRow: event.lane + 1,
-                    background: event.gradient
-                  }}
-                  onClick={() => event.detailLink && window.open(event.detailLink, '_blank', 'noopener,noreferrer')}
-                  title={tooltipText}
-                >
-                  <span className="event-title">{event.title}</span>
-                  <div className="ec-tooltip">{tooltipText}</div>
-                </div>
-              );
-            })}
+                  className="today-row-highlight"
+                  style={{ gridRow: todayRow, gridColumn: `1 / -1` }}
+                />
+
+                {weeks.map((week, index) => (
+                  <div
+                    key={week}
+                    className={`week-row-label ${index + 1 === todayRow ? 'week-row-label--today' : ''}`}
+                    style={{ gridRow: index + 1, gridColumn: 1 }}
+                  >
+                    <div className="week-label">Week {week}</div>
+                    <div className="week-date">{getWeekLabel(index - 3)}</div>
+                    {index + 1 === todayRow && <div className="today-badge">Today</div>}
+                  </div>
+                ))}
+
+                {packedEvents.map(event => {
+                  const rawStart = event.startWeek + todayRow;
+                  const start = Math.max(1, rawStart);
+                  const end = Math.min(weeksToShow + 1, rawStart + event.duration);
+                  const span = Math.max(1, end - start);
+
+                  let tooltipText = event.title;
+                  if (event.type === 'codeforces') {
+                    tooltipText += ` (${event.contestType})`;
+                    tooltipText += ` · Phase: ${event.phase}`;
+                  }
+
+                  return (
+                    <div
+                      key={event.id}
+                      className="ec-bar"
+                      style={{
+                        gridColumn: event.lane + 2,
+                        gridRow: `${start} / span ${span}`,
+                        background: event.gradient
+                      }}
+                      onClick={() => event.detailLink && window.open(event.detailLink, '_blank', 'noopener,noreferrer')}
+                      title={tooltipText}
+                    >
+                      <span className="event-title">{event.title}</span>
+                      <div className="ec-tooltip">{tooltipText}</div>
+                    </div>
+                  );
+                })}
               </div>
             </div>
           </div>

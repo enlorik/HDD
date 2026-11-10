@@ -51,7 +51,8 @@
 }
 .ec-manage-btn:hover { background: var(--ik-card); }
 
-/* ── Calendar grid — weeks as columns, overlap-packed lanes as rows ── */
+/* ── Calendar grid — weeks as rows (unbounded, scrolls vertically like the
+   rest of the page), overlap-packed lanes as columns (bounded, usually 1-2) ── */
 .timeline-content { max-width: 1400px; margin: 0 auto; }
 
 .ec-wrap {
@@ -61,25 +62,11 @@
   padding: 1.5rem;
 }
 
+/* Horizontal scroll is only a safety net for a rare lane-count spike -
+   with 1-2 lanes (the normal case) ec-scroll-inner never exceeds its
+   container and this never activates. */
 .ec-scroll { overflow-x: auto; }
 .ec-scroll-inner { width: 100%; }
-
-.ec-week-headers { display: grid; gap: 0.5rem; margin-bottom: 1.25rem; }
-
-.week-header {
-  background-color: var(--ik-card);
-  border: 1px solid var(--ik-border);
-  border-radius: var(--ik-radius-sm);
-  padding: 0.5rem 0.75rem;
-  text-align: center;
-}
-.week-label {
-  font-weight: 700;
-  color: var(--ik-text);
-  font-size: 0.82rem;
-  margin-bottom: 0.2rem;
-}
-.week-date { font-size: 0.72rem; color: var(--ik-muted); }
 
 .ec-grid {
   position: relative;
@@ -87,47 +74,64 @@
   gap: 6px;
 }
 
-.today-line {
-  position: absolute;
-  top: 0; bottom: 0;
-  width: 2px;
-  background-color: var(--ik-red);
-  z-index: 10;
-  box-shadow: 0 0 8px rgba(255,77,77,0.5);
+.week-row-label {
+  position: relative;
+  background-color: var(--ik-card);
+  border: 1px solid var(--ik-border);
+  border-radius: var(--ik-radius-sm);
+  padding: 0.4rem 0.6rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
 }
-.today-label {
+.week-row-label--today {
+  border-color: var(--ik-red);
+}
+.week-label {
+  font-weight: 700;
+  color: var(--ik-text);
+  font-size: 0.78rem;
+}
+.week-date { font-size: 0.68rem; color: var(--ik-muted); }
+.today-badge {
   position: absolute;
-  top: -28px; left: 50%;
-  transform: translateX(-50%);
+  top: 50%; right: -8px;
+  transform: translate(100%, -50%);
   background-color: var(--ik-red);
   color: #fff;
-  padding: 3px 10px;
+  padding: 2px 8px;
   border-radius: 999px;
-  font-size: 0.72rem;
+  font-size: 0.64rem;
   font-weight: 700;
   white-space: nowrap;
+  box-shadow: 0 0 8px rgba(255,77,77,0.5);
+}
+
+.today-row-highlight {
+  background-color: rgba(255,77,77,0.06);
+  border-radius: var(--ik-radius-sm);
 }
 
 .ec-bar {
   position: relative;
-  min-height: 44px;
-  border-radius: 999px;
+  min-width: 44px;
+  border-radius: var(--ik-radius-sm);
   display: flex;
   align-items: center;
-  padding: 0.5rem 1.25rem;
+  padding: 0.6rem 0.9rem;
   cursor: pointer;
   transition: filter 0.15s, transform 0.15s;
   box-shadow: 0 2px 10px rgba(0,0,0,0.4);
 }
 .ec-bar:hover {
   filter: brightness(1.12);
-  transform: translateY(-2px);
+  transform: translateX(2px);
   z-index: 5;
 }
 .event-title {
   color: #000;
   font-weight: 700;
-  font-size: 0.82rem;
+  font-size: 0.8rem;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -262,12 +266,12 @@
   .timeline-container { padding: 1rem 1rem 2rem; }
   .ec-header { flex-wrap: wrap; gap: 0.75rem; }
   .ec-wrap { padding: 1rem; border-radius: var(--ik-radius-sm); }
-  .ec-week-headers { gap: 0.3rem; }
-  .week-header { padding: 0.4rem 0.3rem; }
-  .week-label { font-size: 0.7rem; }
-  .week-date { font-size: 0.62rem; }
-  .ec-bar { min-height: 38px; padding: 0.4rem 0.9rem; }
-  .event-title { font-size: 0.76rem; }
+  .week-row-label { padding: 0.3rem 0.4rem; }
+  .week-label { font-size: 0.68rem; }
+  .week-date { font-size: 0.58rem; }
+  .today-badge { display: none; } /* the red border on the label row is enough at this width */
+  .ec-bar { padding: 0.4rem 0.7rem; }
+  .event-title { font-size: 0.74rem; }
   .tl-bubble { padding: 0.7rem 1rem; }
   .tl-bubble-title { font-size: 0.84rem; }
   .ec-drawer { padding: 1rem; }
