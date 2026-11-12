@@ -12,7 +12,8 @@ import https from 'https';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { parseCFProblemStatement } from './cfStatementParser.js';
-import { parseLimits, runKotlinSamples } from './judge0.js';
+import { parseLimits } from './judge0.js';
+import { runKotlinSamplesLocal } from './localKotlinRunner.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const app = express();
@@ -97,10 +98,10 @@ app.post('/api/run/kotlin-samples', runRateLimit, async (req, res) => {
   const limits = parseLimits(timeLimit, memoryLimit);
 
   try {
-    const results = await runKotlinSamples(code, samples, limits);
+    const results = await runKotlinSamplesLocal(code, samples, limits);
     return res.json({ results });
   } catch (err) {
-    console.error('[run] Judge0 error:', err.message);
+    console.error('[run] Local Kotlin runner error:', err.message);
     return res.status(502).json({ error: 'Failed to execute code. Please try again.' });
   }
 });
