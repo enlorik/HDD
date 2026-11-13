@@ -1,11 +1,13 @@
-import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useLocation, useParams } from 'react-router-dom';
+import CodeMirror from '@uiw/react-codemirror';
 import { fetchProblemStatement } from '../services/cfStatement';
 import {
   getDraftStorageKey,
   parseProblemWorkspaceQuery,
 } from '../utils/problemWorkspace';
 import { renderMathInHtml, textToHtml } from '../utils/renderMath';
+import { ikEditorExtensions } from './kotlinCodeMirrorTheme';
 import './ProblemWorkspace.css';
 
 const DEFAULT_KOTLIN_STARTER = `import hdd.algos.*
@@ -144,9 +146,8 @@ function ProblemWorkspace() {
 
   const [code, setCode] = useState(() => loadDraft(storageKey));
   const [hasEdited, setHasEdited] = useState(false);
+  const [cursorPos, setCursorPos] = useState({ line: 1, col: 1 });
   const [leftWidth, setLeftWidth] = useState(320);
-  const editorRef = useRef(null);
-  const pendingCaretRef = useRef(null);
   const containerRef = useRef(null);
   const runAbortRef = useRef(null);
 
@@ -210,38 +211,16 @@ function ProblemWorkspace() {
     }
   }, [code, storageKey]);
 
-  useLayoutEffect(() => {
-    if (pendingCaretRef.current === null || !editorRef.current) {
-      return;
-    }
-
-    editorRef.current.selectionStart = pendingCaretRef.current;
-    editorRef.current.selectionEnd = pendingCaretRef.current;
-    pendingCaretRef.current = null;
-  }, [code]);
-
-  const handleEditorChange = event => {
-    setCode(event.target.value);
+  const handleEditorChange = useCallback((value) => {
+    setCode(value);
     setHasEdited(true);
-  };
+  }, []);
 
-  const handleEditorKeyDown = event => {
-    if (event.key !== 'Tab') {
-      return;
-    }
-
-    event.preventDefault();
-    const editor = event.currentTarget;
-    const start = editor.selectionStart;
-    const end = editor.selectionEnd;
-    const spaces = '    ';
-    const nextCode = `${code.slice(0, start)}${spaces}${code.slice(end)}`;
-
-    setCode(nextCode);
-    setHasEdited(true);
-
-    pendingCaretRef.current = start + spaces.length;
-  };
+  const handleEditorUpdate = useCallback((viewUpdate) => {
+    const { state } = viewUpdate.view;
+    const line = state.doc.lineAt(state.selection.main.head);
+    setCursorPos({ line: line.number, col: state.selection.main.head - line.from + 1 });
+  }, []);
 
   const canRunSamples =
     stmtStatus === 'ok' &&
@@ -417,27 +396,25 @@ function ProblemWorkspace() {
                     </div>
                   )}
 
-                  {statement.samples?.length > 0 && (
-                    <div className="problem-workspace-stmt-section">
-                      <h3 className="problem-workspace-stmt-heading">Examples</h3>
-                      {statement.samples.map((sample, i) => (
-                        <div key={i} className="problem-workspace-sample">
-                          <div className="problem-workspace-sample-col">
-                            <div className="problem-workspace-sample-label">Input</div>
-                            <pre className="problem-workspace-sample-pre">
-                              {sample.input}
-                            </pre>
-                          </div>
-                          <div className="problem-workspace-sample-col">
-                            <div className="problem-workspace-sample-label">Output</div>
-                            <pre className="problem-workspace-sample-pre">
-                              {sample.output}
-                            </pre>
-                          </div>
+                  {statement.samples?.length > 0 && statement.samples.map((sample, i) => (
+                    <div key={i} className="problem-workspace-stmt-section">
+                      <h3 className="problem-workspace-stmt-heading">Example {i + 1}</h3>
+                      <div className="problem-workspace-sample">
+                        <div className="problem-workspace-sample-col">
+                          <div className="problem-workspace-sample-label">Input</div>
+                          <pre className="problem-workspace-sample-pre">
+                            {sample.input}
+                          </pre>
                         </div>
-                      ))}
+                        <div className="problem-workspace-sample-col">
+                          <div className="problem-workspace-sample-label">Output</div>
+                          <pre className="problem-workspace-sample-pre">
+                            {sample.output}
+                          </pre>
+                        </div>
+                      </div>
                     </div>
-                  )}
+                  ))}
                 </div>
               )}
 
@@ -466,61 +443,60 @@ function ProblemWorkspace() {
         <section className="problem-workspace-main">
           <div className="problem-workspace-panel problem-workspace-panel--editor">
             <div className="problem-workspace-header">
-              <div className="problem-workspace-editor-heading">
-                <h2>Kotlin</h2>
-                <span className="problem-workspace-language-badge">.kt</span>
-                <span
-                  className="problem-workspace-editor-problem-id"
-                  aria-label={`Problem ${contestId} ${index}`}
-                >
-                  {contestId} {index}
+              <div className="problem-workspace-editor-tabs">
+                <span className="problem-workspace-lang-tab">
+                  <span className="problem-workspace-lang-dot" />
+                  Kotlin
                 </span>
               </div>
               <div className="problem-workspace-actions">
-                {hasEdited && (
-                  <span className="problem-workspace-save-status">
-                    Saved locally
-                  </span>
-                )}
                 <button
                   type="button"
                   className={canRunSamples ? 'problem-workspace-run-btn' : 'problem-workspace-placeholder-btn'}
                   disabled={!canRunSamples}
                   onClick={handleRunSamples}
                 >
-                  {runStatus === 'running' ? 'Running…' : 'Run Samples'}
-                </button>
-                <button
-                  type="button"
-                  className="problem-workspace-placeholder-btn"
-                  disabled
-                >
-                  Prepare Submit
+                  {runStatus === 'running' ? 'Running…' : '▶ Run Samples'}
                 </button>
                 <button
                   type="button"
                   className="problem-workspace-reset-btn"
                   onClick={handleResetDraft}
+                  title="Reset this draft to the Kotlin starter code"
                 >
-                  Reset Draft
+                  ↺ Reset
                 </button>
               </div>
             </div>
 
-            <textarea
-              ref={editorRef}
-              className="problem-workspace-editor"
+            <CodeMirror
               value={code}
               onChange={handleEditorChange}
-              onKeyDown={handleEditorKeyDown}
+              onUpdate={handleEditorUpdate}
+              theme="none"
+              extensions={ikEditorExtensions}
               placeholder={DEFAULT_KOTLIN_STARTER}
-              spellCheck="false"
+              basicSetup={{
+                tabSize: 4,
+                highlightActiveLine: true,
+                foldGutter: true,
+              }}
+              className="problem-workspace-editor-cm"
               aria-label="Kotlin code editor"
             />
+
+            <div className="problem-workspace-editor-statusbar">
+              <span>{hasEdited ? 'Saved' : 'No changes'}</span>
+              <span>Ln {cursorPos.line}, Col {cursorPos.col}</span>
+            </div>
           </div>
 
           <div className="problem-workspace-panel problem-workspace-panel--results">
-            <h2>Samples / Test Results</h2>
+            <div className="problem-workspace-results-tabs">
+              <span className="problem-workspace-results-tab problem-workspace-results-tab--active">
+                Test Result
+              </span>
+            </div>
             <SampleResults
               runStatus={runStatus}
               runResults={runResults}
