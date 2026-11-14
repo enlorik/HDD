@@ -216,11 +216,32 @@ function ProblemWorkspace() {
     setHasEdited(true);
   }, []);
 
+  // Only call setCursorPos when the position actually changed. Without this
+  // guard, every dispatch (including the no-op reconfigure effect below)
+  // calls setCursorPos with a brand-new object every time, and since
+  // useState compares by reference, React treats that as a real change and
+  // re-renders - which recreates the editorBasicSetup object below, which
+  // (per @uiw/react-codemirror's own reconfigure effect, keyed on that
+  // object's identity) re-dispatches, calling this handler again. Confirmed
+  // empirically before fixing: a single keystroke produced 4x the DOM
+  // updates it should have, via a MutationObserver on the status bar.
   const handleEditorUpdate = useCallback((viewUpdate) => {
     const { state } = viewUpdate.view;
     const line = state.doc.lineAt(state.selection.main.head);
-    setCursorPos({ line: line.number, col: state.selection.main.head - line.from + 1 });
+    const nextLine = line.number;
+    const nextCol = state.selection.main.head - line.from + 1;
+    setCursorPos(prev =>
+      (prev.line === nextLine && prev.col === nextCol) ? prev : { line: nextLine, col: nextCol }
+    );
   }, []);
+
+  // Memoized so its reference stays stable across renders - passing a fresh
+  // object literal here every render was the other half of the loop above.
+  const editorBasicSetup = useMemo(() => ({
+    tabSize: 4,
+    highlightActiveLine: true,
+    foldGutter: true,
+  }), []);
 
   const canRunSamples =
     stmtStatus === 'ok' &&
@@ -476,11 +497,7 @@ function ProblemWorkspace() {
               theme="none"
               extensions={ikEditorExtensions}
               placeholder={DEFAULT_KOTLIN_STARTER}
-              basicSetup={{
-                tabSize: 4,
-                highlightActiveLine: true,
-                foldGutter: true,
-              }}
+              basicSetup={editorBasicSetup}
               className="problem-workspace-editor-cm"
               aria-label="Kotlin code editor"
             />
